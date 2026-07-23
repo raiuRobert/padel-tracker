@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { BottomNav } from "@/components/BottomNav";
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { DataProvider } from "./providers";
 import "./globals.css";
 
@@ -12,6 +13,10 @@ export const metadata: Metadata = {
   description: "Fair rotations, live scores and an honest split of the court fee.",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Padel" },
+  icons: {
+    icon: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export const viewport: Viewport = {
@@ -30,6 +35,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <DataProvider>
           <main className="mx-auto w-full max-w-lg px-4 pt-6 pb-4">{children}</main>
           <BottomNav />
+          <ServiceWorkerRegistration />
         </DataProvider>
       </body>
     </html>

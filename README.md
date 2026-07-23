@@ -27,6 +27,13 @@ Open http://localhost:3000.
 | `npm test` | Run the unit test suite (Vitest) |
 | `npm run test:watch` | Run tests in watch mode |
 | `npm run lint` | Lint |
+| `npm run icons` | Regenerate the app icons in `public/` |
+
+### Installing it on a phone
+
+It's a PWA: open it in the phone's browser and use *Add to home screen*. It then launches
+full-screen, and a service worker caches the app shell so it keeps working on a court with no
+signal. Nothing needs syncing — all the data is in the browser already.
 
 ## Rotation modes
 
@@ -79,8 +86,12 @@ src/
   lib/            pure TypeScript — no React, no storage, no DOM
     rotation/     schedule generation for both modes
     cost/         cost-split calculation
+    standings.ts  played rounds → leaderboards
+    session.ts    glue between a stored session and the engines above
   data/           storage layer behind a repository interface (IndexedDB via idb)
-  app/            Next.js App Router UI
+  components/     shared UI
+  app/            Next.js App Router screens
+scripts/          icon generation
 ```
 
 The rotation engine and cost-split logic are deliberately framework-agnostic plain TypeScript with
@@ -97,7 +108,13 @@ Decisions made without asking, noted here so they're easy to revisit:
 - **Session length is a free number input**, defaulting to 2 hours — not a fixed 2/3/4 dropdown.
 - **First to 6 games** is the default per-rotation target, configurable per session.
 - **Cost is split by rotations played**, which is the proxy for time on court. It assumes rotations
-  are roughly equal length, which they are in practice.
+  are roughly equal length, which they are in practice. Only *scored* rotations count — an
+  Americano schedule exists before it's played, and nobody should be billed for a fixture.
+- **The court fee is pooled across both courts** rather than charging each court to the four people
+  on it. It's one group settling one bill.
+- **Money is handled in integer cents** and split by largest remainder, so shares always add up to
+  the bill exactly.
+- **Currency is a constant** (`CURRENCY` in `src/lib/format.ts`), defaulting to €.
 
 ## Out of scope (for now)
 
