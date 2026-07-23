@@ -1,26 +1,58 @@
 @import "tailwindcss";
 
+/**
+ * A single dark theme, chosen deliberately: this app gets used on a phone, outdoors, on a court
+ * that's usually floodlit in the evening. A bright white screen between points is unpleasant.
+ */
+@theme {
+  --color-canvas: #0b0f14;
+  --color-surface: #141b23;
+  --color-raised: #1d2732;
+  --color-line: #27333f;
+  --color-ink: #e9eff6;
+  --color-muted: #92a5b9;
+  --color-accent: #9ae600;
+  --color-accent-ink: #0d1500;
+  --color-team-a: #38bdf8;
+  --color-team-b: #fb923c;
+  --color-danger: #f87171;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  /* Room for the fixed bottom nav plus the iOS home indicator. */
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Number inputs get spinners that are useless on a phone and steal tap area. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

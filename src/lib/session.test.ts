@@ -127,7 +127,10 @@ describe("standings", () => {
     expect(table.every((r) => r.gamesWon === 5)).toBe(true);
   });
 
-  it("counts sit-outs and skips unscored rounds in the games columns", () => {
+  it("counts sit-outs, and ignores rounds that haven't been scored yet", () => {
+    // An Americano session generates its whole schedule up front, so the second round here is a
+    // fixture nobody has played. Counting it would credit ana with a rotation she hasn't played
+    // and put a sit-out against eve's name before she's sat.
     const s = session({
       playerIds: ["ana", "ben", "cleo", "dan", "eve"],
       rounds: [
@@ -136,8 +139,31 @@ describe("standings", () => {
       ],
     });
     const byId = Object.fromEntries(sessionStandings(s).map((r) => [r.playerId, r]));
-    expect(byId.eve).toMatchObject({ sitOuts: 1, roundsPlayed: 1, gamesWon: 0 });
-    expect(byId.ana).toMatchObject({ sitOuts: 0, roundsPlayed: 2, gamesWon: 6 });
+    expect(byId.eve).toMatchObject({ sitOuts: 1, roundsPlayed: 0, gamesWon: 0 });
+    expect(byId.ana).toMatchObject({ sitOuts: 0, roundsPlayed: 1, gamesWon: 6 });
+    expect(byId.dan).toMatchObject({ sitOuts: 0, roundsPlayed: 1 });
+  });
+
+  it("doesn't bill anyone for a pre-generated schedule they haven't played", () => {
+    // The exact shape that broke it: one round scored, seven more waiting on the schedule.
+    const fixture = (index: number) => ({
+      index,
+      matches: [{ court: 1, teamA: ["ana", "ben"] as [string, string], teamB: ["cleo", "dan"] as [string, string] }],
+      sittingOut: [],
+      results: [],
+    });
+    const s = session({
+      bookings: [{ court: 1, costCents: 4000, hours: 2 }],
+      rounds: [round(0, ["ana", "ben"], ["cleo", "dan"], [6, 2]), ...[1, 2, 3, 4, 5, 6, 7].map(fixture)],
+    });
+
+    expect(sessionParticipation(s)).toEqual([
+      { playerId: "ana", roundsPlayed: 1 },
+      { playerId: "ben", roundsPlayed: 1 },
+      { playerId: "cleo", roundsPlayed: 1 },
+      { playerId: "dan", roundsPlayed: 1 },
+    ]);
+    expect(sessionCostSplit(s).perPlayer.map((p) => p.courtShareCents)).toEqual([1000, 1000, 1000, 1000]);
   });
 
   it("aggregates several sessions into an all-time table", () => {

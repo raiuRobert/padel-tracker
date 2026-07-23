@@ -14,8 +14,15 @@ export function isRoundScored(round: SessionRound): boolean {
   return round.matches.length > 0 && round.results.length === round.matches.length;
 }
 
+/**
+ * Only rounds that have actually been scored.
+ *
+ * This filter matters: an Americano session generates its entire schedule up front, so
+ * `session.rounds` is full of fixtures nobody has played yet. Counting those would credit players
+ * with rotations they haven't played and bill them for court time they haven't used.
+ */
 export function toPlayedRounds(session: Session): PlayedRound[] {
-  return session.rounds.map((round) => ({
+  return session.rounds.filter(isRoundScored).map((round) => ({
     round: { index: round.index, matches: round.matches, sittingOut: round.sittingOut },
     results: round.results,
   }));

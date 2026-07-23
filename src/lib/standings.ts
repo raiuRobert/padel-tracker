@@ -35,8 +35,9 @@ interface MutableTally {
 }
 
 /**
- * Rounds played counts time on court, so it ticks up as soon as a player takes the court —
- * whether or not the score has been entered yet. Games won and lost only move once it has.
+ * Callers are expected to pass rounds that have actually been played — see `toPlayedRounds`, which
+ * filters out an Americano schedule's unplayed fixtures. A court with no result still counts
+ * towards rounds played, so a round scored 0-0 doesn't erase anyone's time on court.
  */
 export function computeTallies(
   players: readonly PlayerId[],
