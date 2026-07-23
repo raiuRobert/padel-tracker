@@ -18,6 +18,14 @@ export interface PlayedRound {
   readonly results: readonly MatchResult[];
 }
 
+/** A leaderboard line: the raw tally plus the derived numbers the standings screens show. */
+export interface StandingsRow extends PlayerTally {
+  /** Rotations won outright. A drawn rotation counts for neither side. */
+  readonly matchesWon: number;
+  readonly matchesLost: number;
+  readonly gameDifference: number;
+}
+
 interface MutableTally {
   playerId: PlayerId;
   gamesWon: number;
@@ -65,4 +73,68 @@ export function computeTallies(
   }
 
   return players.map((id) => ({ ...tallies.get(id)! }));
+}
+
+/** How many rotations each player won and lost outright, ignoring drawn ones. */
+function countMatchOutcomes(
+  players: readonly PlayerId[],
+  playedRounds: readonly PlayedRound[],
+): Map<PlayerId, { won: number; lost: number }> {
+  const outcomes = new Map(players.map((id) => [id, { won: 0, lost: 0 }]));
+
+  for (const { round, results } of playedRounds) {
+    const byCourt = new Map(results.map((result) => [result.court, result]));
+    for (const match of round.matches) {
+      const result = byCourt.get(match.court);
+      if (!result || result.teamAGames === result.teamBGames) continue;
+
+      const teamAWon = result.teamAGames > result.teamBGames;
+      const winners = teamAWon ? match.teamA : match.teamB;
+      const losers = teamAWon ? match.teamB : match.teamA;
+      for (const id of winners) {
+        const outcome = outcomes.get(id);
+        if (outcome) outcome.won += 1;
+      }
+      for (const id of losers) {
+        const outcome = outcomes.get(id);
+        if (outcome) outcome.lost += 1;
+      }
+    }
+  }
+  return outcomes;
+}
+
+/**
+ * The leaderboard, best first. Games won is the headline number — that's what an Americano or
+ * Mexicano is scored on — with game difference and then games conceded breaking ties, and the
+ * player id last so the order is stable across renders.
+ */
+export function computeStandings(
+  players: readonly PlayerId[],
+  playedRounds: readonly PlayedRound[],
+): StandingsRow[] {
+  const outcomes = countMatchOutcomes(players, playedRounds);
+
+  return computeTallies(players, playedRounds)
+    .map((tally) => ({
+      ...tally,
+      matchesWon: outcomes.get(tally.playerId)!.won,
+      matchesLost: outcomes.get(tally.playerId)!.lost,
+      gameDifference: tally.gamesWon - tally.gamesLost,
+    }))
+    .sort(
+      (a, b) =>
+        b.gamesWon - a.gamesWon ||
+        b.gameDifference - a.gameDifference ||
+        a.gamesLost - b.gamesLost ||
+        a.playerId.localeCompare(b.playerId),
+    );
+}
+
+/** Merges several sessions' worth of played rounds into one all-time table. */
+export function combineStandings(
+  players: readonly PlayerId[],
+  sessions: readonly (readonly PlayedRound[])[],
+): StandingsRow[] {
+  return computeStandings(players, sessions.flat());
 }
