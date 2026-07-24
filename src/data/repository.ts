@@ -31,6 +31,12 @@ export interface PadelRepository {
   getSession(id: string): Promise<Session | undefined>;
   createSession(input: NewSession): Promise<Session>;
   updateSession(id: string, patch: SessionPatch): Promise<Session>;
+  /**
+   * Stores a complete session under its own id, inserting or replacing. Used by the sync layer to
+   * cache a session pulled from the shared backend — a session created on another device, or one
+   * changed there and pushed over realtime — which `createSession` (it mints a new id) can't do.
+   */
+  upsertSession(session: Session): Promise<void>;
   deleteSession(id: string): Promise<void>;
 
   /** Wipes everything. Used by tests and by a "start over" action. */

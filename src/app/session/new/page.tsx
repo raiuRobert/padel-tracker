@@ -134,6 +134,8 @@ export default function NewSessionPage() {
         groupId,
         // For 8 players this order *is* the pairing, which the rotation engine reads directly.
         playerIds: selected,
+        // Snapshot names so anyone who opens the shared link can read them without our roster.
+        participants: selected.map((playerId) => ({ id: playerId, name: nameOf(playerId) })),
         courts,
         mode,
         // Courts run concurrently, so the session is as long as the longest booking.

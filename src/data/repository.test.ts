@@ -1,6 +1,6 @@
 import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
-import type { NewSession } from "@/lib/domain";
+import type { NewSession, Session } from "@/lib/domain";
 import { IndexedDbRepository } from "./indexeddb";
 import { InMemoryRepository } from "./memory";
 import { NotFoundError, type PadelRepository } from "./repository";
@@ -13,6 +13,7 @@ function newSession(playerIds: readonly string[], overrides: Partial<NewSession>
   return {
     date: "2026-07-24",
     playerIds,
+    participants: playerIds.map((id) => ({ id, name: id })),
     courts: 1,
     mode: "americano",
     hours: 2,
@@ -192,6 +193,32 @@ function contractSuite(name: string, create: () => PadelRepository) {
       it("reports an unknown session on update and delete", async () => {
         await expect(repo.updateSession("nope", { status: "finished" })).rejects.toThrow(NotFoundError);
         await expect(repo.deleteSession("nope")).rejects.toThrow(NotFoundError);
+      });
+
+      it("upserts a whole session under its own id, inserting then replacing", async () => {
+        const created = await repo.createSession(newSession(playerIds));
+
+        // A copy arriving from the shared backend — same id, changed content.
+        const remote: Session = { ...created, status: "finished", hours: 3 };
+        await repo.upsertSession(remote);
+
+        const stored = await repo.getSession(created.id);
+        expect(stored).toEqual(remote);
+        // It's a replace, not a duplicate.
+        expect((await repo.listSessions()).filter((s) => s.id === created.id)).toHaveLength(1);
+      });
+
+      it("upserts a session that was never created locally (a joined one)", async () => {
+        const joined: Session = {
+          ...newSession(playerIds),
+          id: "joined-1",
+          rounds: [],
+          extras: [],
+          status: "active",
+          createdAt: "2026-07-24T18:00:00.000Z",
+        };
+        await repo.upsertSession(joined);
+        expect(await repo.getSession("joined-1")).toEqual(joined);
       });
     });
 

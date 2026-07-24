@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { ShareButton } from "@/components/ShareButton";
 import { Badge, ButtonLink, EmptyState, Loading } from "@/components/ui";
 import { useI18n, type MessageKey } from "@/i18n";
 import { scoredRoundCount } from "@/lib/session";
@@ -12,13 +13,35 @@ import { useData } from "../../providers";
 export default function SessionLayout({ children }: { children: ReactNode }) {
   const { id } = useParams<{ id: string }>();
   const pathname = usePathname();
-  const { ready, sessions } = useData();
+  const { ready, sessions, joinSession, watchSession } = useData();
   const { t, n, formatDate } = useI18n();
+
+  const session = sessions.find((s) => s.id === id);
+  const hasSession = session !== undefined;
+  const joinTried = useRef(false);
+  const [joinMissing, setJoinMissing] = useState(false);
+
+  // Someone opening a shared link won't have the session locally — pull it from the backend once.
+  // The ref guards against re-fetching; state only changes if the fetch comes back empty.
+  useEffect(() => {
+    if (!ready || hasSession || joinTried.current) return;
+    joinTried.current = true;
+    void joinSession(id).then((found) => {
+      if (!found) setJoinMissing(true);
+    });
+  }, [ready, hasSession, id, joinSession]);
+
+  // Live-follow while any of the session's tabs is open, so a friend's score lands here instantly.
+  // Keyed on existence, not the session object, so score updates don't churn the subscription.
+  useEffect(() => {
+    if (!hasSession) return;
+    return watchSession(id);
+  }, [hasSession, id, watchSession]);
 
   if (!ready) return <Loading label={t("common.loading")} />;
 
-  const session = sessions.find((s) => s.id === id);
   if (!session) {
+    if (!joinMissing) return <Loading label={t("common.loading")} />;
     return (
       <EmptyState
         title={t("session.notFoundTitle")}
@@ -46,11 +69,14 @@ export default function SessionLayout({ children }: { children: ReactNode }) {
               {n("court", session.courts)}
             </p>
           </div>
-          <Badge tone={session.status === "active" ? "accent" : "muted"}>
-            {session.status === "active"
-              ? t("home.roundsIn", { count: n("round", scoredRoundCount(session)) })
-              : t("session.finished")}
-          </Badge>
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <Badge tone={session.status === "active" ? "accent" : "muted"}>
+              {session.status === "active"
+                ? t("home.roundsIn", { count: n("round", scoredRoundCount(session)) })
+                : t("session.finished")}
+            </Badge>
+            <ShareButton sessionId={session.id} />
+          </div>
         </div>
 
         <nav className="mt-5 grid grid-cols-3 gap-1 rounded-lg bg-surface p-1">

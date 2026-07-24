@@ -158,6 +158,10 @@ export class IndexedDbRepository implements PadelRepository {
     return updated;
   }
 
+  async upsertSession(session: Session): Promise<void> {
+    await (await this.db()).put("sessions", session);
+  }
+
   async deleteSession(id: string): Promise<void> {
     const db = await this.db();
     if (!(await db.get("sessions", id))) throw new NotFoundError("session", id);

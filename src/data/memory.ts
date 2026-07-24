@@ -117,6 +117,10 @@ export class InMemoryRepository implements PadelRepository {
     return updated;
   }
 
+  async upsertSession(session: Session): Promise<void> {
+    this.sessions.set(session.id, session);
+  }
+
   async deleteSession(id: string): Promise<void> {
     if (!this.sessions.delete(id)) throw new NotFoundError("session", id);
   }

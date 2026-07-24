@@ -8,8 +8,9 @@ A courtside web app for groups of friends who play social padel. It solves three
 3. **Fair cost splitting.** Split the court fee in proportion to how much each person actually
    played, not an equal split — plus whatever they grabbed from the fridge.
 
-No backend, no login. Everything lives in the browser (IndexedDB) and works offline once loaded.
-Available in English and Romanian.
+No login. Everything lives in the browser (IndexedDB) and works offline once loaded. Available in
+English and Romanian. Optionally, sessions sync live across devices (see *Live sync* below), so
+your friends can enter scores on their own phones and everyone's screen updates in real time.
 
 ## Setup
 
@@ -17,6 +18,9 @@ Available in English and Romanian.
 npm install
 npm run dev
 ```
+
+For live sync, copy `.env.example` to `.env.local` and fill in your Supabase project's URL and
+publishable key. Without them the app runs entirely on-device, exactly as before.
 
 Open http://localhost:3000.
 
@@ -94,6 +98,25 @@ Pick the **currency** per session from a short list (EUR, RON, USD, GBP, PLN, CH
 last choice is remembered as the default. Amounts are formatted for the chosen language, so a
 Romanian sees `60,00 RON/oră` where an English speaker sees `RON 60.00/hr`.
 
+## Live sync
+
+When Supabase is configured, sessions are shared across devices in real time. Tap **Share** on a
+session for a link and QR code; anyone who opens it joins the same session and can enter scores,
+and every device updates live.
+
+- **No accounts.** The session's id (an unguessable UUID) *is* the share secret — whoever has the
+  link can read and edit. That's the right trade-off for a friends' game; it isn't private-grade,
+  and the model is documented as such in the database policies.
+- **Conflict-free scoring.** Scores go through a Postgres function that merges by court under a row
+  lock, so two people scoring different courts of the same round never overwrite each other.
+- **Self-describing sessions.** Player *names* are snapshotted into each session, so someone who
+  opens a shared link sees the names without needing your (device-local, un-synced) roster.
+- **Local-first.** Each device keeps an IndexedDB cache and works offline; the cloud copy is the
+  shared source of truth when online. Players and groups stay on-device.
+
+The data layer sits behind a small repository interface, which is what made adding this a layer on
+top rather than a rewrite.
+
 ## Architecture
 
 ```
@@ -105,7 +128,7 @@ src/
     standings.ts  played rounds → leaderboards
     session.ts    glue between a stored session and the engines above
   data/           storage layer behind a repository interface (IndexedDB via idb),
-                  plus on-read migration of older stored sessions
+                  on-read migration, and the Supabase live-sync channel for sessions
   i18n/           typed English/Romanian dictionary and locale context
   components/     shared UI
   app/            Next.js App Router screens

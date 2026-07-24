@@ -55,6 +55,11 @@ describe("migrateSession", () => {
     expect(migrated.currency).toBe("EUR");
   });
 
+  it("gives a participant-less session an empty snapshot", () => {
+    const migrated = migrateSession(legacySession([{ court: 1, winner: "A" }]));
+    expect(migrated.participants).toEqual([]);
+  });
+
   it("leaves a session that already has a currency in that currency", () => {
     const current = { ...legacySession([{ court: 1, winner: "B" }]), currency: "RON" } as Session;
     delete (current as Session & { gamesToWin?: number }).gamesToWin;
@@ -62,7 +67,11 @@ describe("migrateSession", () => {
   });
 
   it("leaves an already-migrated session untouched", () => {
-    const current: Session = { ...legacySession([{ court: 1, winner: "B" }]), currency: "EUR" } as Session;
+    const current: Session = {
+      ...legacySession([{ court: 1, winner: "B" }]),
+      currency: "EUR",
+      participants: [],
+    } as Session;
     delete (current as Session & { gamesToWin?: number }).gamesToWin;
 
     expect(migrateSession(current)).toBe(current);

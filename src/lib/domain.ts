@@ -38,6 +38,12 @@ export interface SessionRound {
 
 export type SessionStatus = "active" | "finished";
 
+/** A player's name captured into a session, so a shared session is readable without the roster. */
+export interface Participant {
+  readonly id: PlayerId;
+  readonly name: string;
+}
+
 export interface Session {
   readonly id: string;
   /** ISO date of the outing (not the creation timestamp). */
@@ -49,6 +55,11 @@ export interface Session {
    * pairing lives in this ordering rather than a separate field so there's one source of truth.
    */
   readonly playerIds: readonly PlayerId[];
+  /**
+   * Names of everyone in `playerIds`, snapshotted at creation. The roster is personal to each
+   * device and never synced, so this is what lets someone who opens a shared link read the names.
+   */
+  readonly participants: readonly Participant[];
   readonly courts: number;
   readonly mode: RotationMode;
   /** Planned length. Free-form rather than a 2/3/4 dropdown — sessions do overrun. */
@@ -69,6 +80,7 @@ export interface NewSession {
   readonly date: string;
   readonly groupId?: string;
   readonly playerIds: readonly PlayerId[];
+  readonly participants: readonly Participant[];
   readonly courts: number;
   readonly mode: RotationMode;
   readonly hours: number;

@@ -27,7 +27,7 @@ function CourtSwapNotice() {
 
 export default function SessionPlayPage() {
   const { id } = useParams<{ id: string }>();
-  const { sessions, playerName, patchSession } = useData();
+  const { sessions, playerName, patchSession, recordResults } = useData();
   const { t, n } = useI18n();
   const [addingExtra, setAddingExtra] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -67,9 +67,9 @@ export default function SessionPlayPage() {
 
   async function saveScore(round: SessionRound, results: MatchResult[]) {
     if (!session) return;
-    await patchSession(session.id, {
-      rounds: session.rounds.map((r) => (r.index === round.index ? { ...r, results } : r)),
-    });
+    // Goes through the conflict-free path so it merges with, rather than overwrites, a score a
+    // friend may have just entered on the other court.
+    await recordResults(session.id, round.index, results);
     setEditingIndex(null);
   }
 

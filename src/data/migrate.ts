@@ -42,10 +42,14 @@ export function migrateSession(session: Session): Session {
 
   // Sessions predating selectable currencies were all billed in euros.
   const needsCurrency = raw.currency === undefined;
+  // Sessions predating shared links have no participant snapshot; on this device the local roster
+  // still resolves their names, so an empty snapshot is enough to bring the shape up to date.
+  const needsParticipants = raw.participants === undefined;
 
   const changed =
     raw.gamesToWin !== undefined ||
     needsCurrency ||
+    needsParticipants ||
     rounds.some((round, i) => round.results.length !== session.rounds[i].results.length) ||
     rounds.some((round, i) =>
       round.results.some((result, j) => result.winner !== session.rounds[i].results[j]?.winner),
@@ -57,6 +61,7 @@ export function migrateSession(session: Session): Session {
     ...raw,
     rounds,
     currency: raw.currency ?? DEFAULT_CURRENCY,
+    participants: raw.participants ?? [],
   };
   delete migrated.gamesToWin;
   return migrated;

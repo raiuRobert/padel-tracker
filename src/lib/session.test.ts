@@ -30,6 +30,7 @@ function session(overrides: Partial<Session> = {}): Session {
     id: "s1",
     date: "2026-07-24",
     playerIds: players,
+    participants: players.map((id) => ({ id, name: id })),
     courts: 1,
     mode: "americano",
     hours: 2,
