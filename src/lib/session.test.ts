@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Session, SessionRound } from "./domain";
-import { suggestedRoundCount } from "./domain";
+import { plannedRoundCount, suggestedRoundCount } from "./domain";
 import {
   buildNextRound,
   currentRound,
@@ -9,17 +9,19 @@ import {
   sessionCostSplit,
   sessionParticipation,
   sessionStandings,
+  startsWithCourtSwap,
 } from "./session";
+import type { Side } from "./rotation/types";
 import { combineStandings, computeStandings, type PlayedRound } from "./standings";
 
 const players = ["ana", "ben", "cleo", "dan"];
 
-function round(index: number, teamA: string[], teamB: string[], score?: [number, number]): SessionRound {
+function round(index: number, teamA: string[], teamB: string[], winner?: Side): SessionRound {
   return {
     index,
     matches: [{ court: 1, teamA: teamA as [string, string], teamB: teamB as [string, string] }],
     sittingOut: [],
-    results: score ? [{ court: 1, teamAGames: score[0], teamBGames: score[1] }] : [],
+    results: winner ? [{ court: 1, winner }] : [],
   };
 }
 
@@ -31,7 +33,6 @@ function session(overrides: Partial<Session> = {}): Session {
     courts: 1,
     mode: "americano",
     hours: 2,
-    gamesToWin: 6,
     bookings: [{ court: 1, costCents: 4200, hours: 2 }],
     rounds: [],
     extras: [],
@@ -44,22 +45,19 @@ function session(overrides: Partial<Session> = {}): Session {
 describe("round progress", () => {
   it("treats a round as scored only once every court has a result", () => {
     expect(isRoundScored(round(0, ["ana", "ben"], ["cleo", "dan"]))).toBe(false);
-    expect(isRoundScored(round(0, ["ana", "ben"], ["cleo", "dan"], [6, 3]))).toBe(true);
+    expect(isRoundScored(round(0, ["ana", "ben"], ["cleo", "dan"], "A"))).toBe(true);
   });
 
   it("points at the first unscored round", () => {
     const s = session({
-      rounds: [
-        round(0, ["ana", "ben"], ["cleo", "dan"], [6, 3]),
-        round(1, ["ana", "cleo"], ["ben", "dan"]),
-      ],
+      rounds: [round(0, ["ana", "ben"], ["cleo", "dan"], "A"), round(1, ["ana", "cleo"], ["ben", "dan"])],
     });
     expect(currentRound(s)!.index).toBe(1);
     expect(scoredRoundCount(s)).toBe(1);
   });
 
   it("has no current round once everything is scored", () => {
-    const s = session({ rounds: [round(0, ["ana", "ben"], ["cleo", "dan"], [6, 3])] });
+    const s = session({ rounds: [round(0, ["ana", "ben"], ["cleo", "dan"], "A")] });
     expect(currentRound(s)).toBeUndefined();
   });
 });
@@ -70,17 +68,14 @@ describe("building the next round", () => {
     expect(first.index).toBe(0);
     expect(first.matches[0]).toEqual({ court: 1, teamA: ["ana", "ben"], teamB: ["cleo", "dan"] });
 
-    const second = buildNextRound(session({ rounds: [round(0, ["ana", "ben"], ["cleo", "dan"], [6, 0])] }));
+    const second = buildNextRound(session({ rounds: [round(0, ["ana", "ben"], ["cleo", "dan"], "A")] }));
     expect(second.matches[0]).toEqual({ court: 1, teamA: ["ana", "cleo"], teamB: ["ben", "dan"] });
   });
 
   it("re-pairs Mexicano from the standings so far", () => {
-    // ana and ben won 6-1, so they lead. Ranking is ana, ben, cleo, dan, which pairs the leader
-    // with the tail-ender: 1st+4th against 2nd+3rd.
-    const s = session({
-      mode: "mexicano",
-      rounds: [round(0, ["ana", "ben"], ["cleo", "dan"], [6, 1])],
-    });
+    // ana and ben won, so they lead on a point each. Ranking is ana, ben, cleo, dan, which pairs
+    // the leader with the tail-ender: 1st+4th against 2nd+3rd.
+    const s = session({ mode: "mexicano", rounds: [round(0, ["ana", "ben"], ["cleo", "dan"], "A")] });
     const next = buildNextRound(s);
     expect(next.index).toBe(1);
     expect(next.matches[0]).toEqual({ court: 1, teamA: ["ana", "dan"], teamB: ["ben", "cleo"] });
@@ -91,40 +86,49 @@ describe("building the next round", () => {
   });
 });
 
-describe("standings", () => {
-  it("ranks by games won, then game difference", () => {
-    const s = session({
-      rounds: [
-        round(0, ["ana", "ben"], ["cleo", "dan"], [6, 2]),
-        round(1, ["ana", "cleo"], ["ben", "dan"], [6, 4]),
-      ],
-    });
-    // ana wins both (12 games), ben wins then loses (6+4), cleo loses then wins (2+6), dan loses both.
-    const table = sessionStandings(s);
-    expect(table.map((r) => r.playerId)).toEqual(["ana", "ben", "cleo", "dan"]);
+describe("court swaps", () => {
+  const eight = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
-    const ana = table[0];
-    expect(ana).toMatchObject({
-      gamesWon: 12,
-      gamesLost: 6,
-      gameDifference: 6,
-      roundsPlayed: 2,
-      matchesWon: 2,
-      matchesLost: 0,
-      sitOuts: 0,
-    });
+  it("flags the round that opens each new block of an 8-player session", () => {
+    const s = session({ playerIds: eight, courts: 2 });
+    expect([0, 1, 2].map((i) => startsWithCourtSwap(s, i))).toEqual([false, false, false]);
+    expect([3, 6, 9].map((i) => startsWithCourtSwap(s, i))).toEqual([true, true, true]);
   });
 
-  it("counts a drawn rotation for neither side", () => {
-    const drawn: PlayedRound[] = [
+  it("never flags a swap for smaller sessions or for Mexicano", () => {
+    expect(startsWithCourtSwap(session(), 3)).toBe(false);
+    expect(startsWithCourtSwap(session({ playerIds: eight, courts: 2, mode: "mexicano" }), 3)).toBe(false);
+  });
+});
+
+describe("standings", () => {
+  it("gives a point to each player on the winning team, ranked by points", () => {
+    const s = session({
+      rounds: [
+        round(0, ["ana", "ben"], ["cleo", "dan"], "A"),
+        round(1, ["ana", "cleo"], ["ben", "dan"], "A"),
+      ],
+    });
+    const table = sessionStandings(s);
+    // ana wins both, ben and cleo one each (roster order breaks their tie), dan none.
+    expect(table.map((r) => r.playerId)).toEqual(["ana", "ben", "cleo", "dan"]);
+    expect(table[0]).toMatchObject({ points: 2, losses: 0, roundsPlayed: 2, sitOuts: 0 });
+    expect(table[3]).toMatchObject({ points: 0, losses: 2, roundsPlayed: 2 });
+  });
+
+  it("ranks a player with fewer losses above one on the same points", () => {
+    const table = computeStandings(["ana", "ben"], [
       {
-        round: { index: 0, matches: [{ court: 1, teamA: ["ana", "ben"], teamB: ["cleo", "dan"] }], sittingOut: [] },
-        results: [{ court: 1, teamAGames: 5, teamBGames: 5 }],
+        round: { index: 0, matches: [{ court: 1, teamA: ["ana", "ben"], teamB: ["x", "y"] }], sittingOut: [] },
+        results: [{ court: 1, winner: "A" }],
       },
-    ];
-    const table = computeStandings(players, drawn);
-    expect(table.every((r) => r.matchesWon === 0 && r.matchesLost === 0)).toBe(true);
-    expect(table.every((r) => r.gamesWon === 5)).toBe(true);
+      {
+        round: { index: 1, matches: [{ court: 1, teamA: ["ben", "x"], teamB: ["ana", "y"] }], sittingOut: [] },
+        results: [{ court: 1, winner: "A" }],
+      },
+    ] as PlayedRound[]);
+    // Both on one point; ana lost her second game, ben didn't play a losing side.
+    expect(table.map((r) => r.playerId)).toEqual(["ben", "ana"]);
   });
 
   it("counts sit-outs, and ignores rounds that haven't been scored yet", () => {
@@ -134,14 +138,45 @@ describe("standings", () => {
     const s = session({
       playerIds: ["ana", "ben", "cleo", "dan", "eve"],
       rounds: [
-        { index: 0, matches: [{ court: 1, teamA: ["ana", "ben"], teamB: ["cleo", "dan"] }], sittingOut: ["eve"], results: [{ court: 1, teamAGames: 6, teamBGames: 1 }] },
+        { index: 0, matches: [{ court: 1, teamA: ["ana", "ben"], teamB: ["cleo", "dan"] }], sittingOut: ["eve"], results: [{ court: 1, winner: "A" }] },
         { index: 1, matches: [{ court: 1, teamA: ["eve", "ana"], teamB: ["ben", "cleo"] }], sittingOut: ["dan"], results: [] },
       ],
     });
     const byId = Object.fromEntries(sessionStandings(s).map((r) => [r.playerId, r]));
-    expect(byId.eve).toMatchObject({ sitOuts: 1, roundsPlayed: 0, gamesWon: 0 });
-    expect(byId.ana).toMatchObject({ sitOuts: 0, roundsPlayed: 1, gamesWon: 6 });
-    expect(byId.dan).toMatchObject({ sitOuts: 0, roundsPlayed: 1 });
+    expect(byId.eve).toMatchObject({ sitOuts: 1, roundsPlayed: 0, points: 0 });
+    expect(byId.ana).toMatchObject({ sitOuts: 0, roundsPlayed: 1, points: 1 });
+    expect(byId.dan).toMatchObject({ sitOuts: 0, roundsPlayed: 1, points: 0, losses: 1 });
+  });
+
+  it("aggregates several sessions into an all-time table", () => {
+    const one: PlayedRound[] = [
+      { round: { index: 0, matches: [{ court: 1, teamA: ["ana", "ben"], teamB: ["cleo", "dan"] }], sittingOut: [] }, results: [{ court: 1, winner: "A" }] },
+    ];
+    const two: PlayedRound[] = [
+      { round: { index: 0, matches: [{ court: 1, teamA: ["cleo", "dan"], teamB: ["ana", "ben"] }], sittingOut: [] }, results: [{ court: 1, winner: "A" }] },
+    ];
+    const byId = Object.fromEntries(combineStandings(players, [one, two]).map((r) => [r.playerId, r]));
+    expect(byId.ana).toMatchObject({ points: 1, losses: 1, roundsPlayed: 2 });
+    expect(byId.cleo).toMatchObject({ points: 1, losses: 1, roundsPlayed: 2 });
+  });
+});
+
+describe("cost", () => {
+  it("counts rotations actually played as the split weight", () => {
+    const s = session({
+      playerIds: ["ana", "ben", "cleo", "dan", "eve"],
+      rounds: [
+        { index: 0, matches: [{ court: 1, teamA: ["ana", "ben"], teamB: ["cleo", "dan"] }], sittingOut: ["eve"], results: [{ court: 1, winner: "A" }] },
+        { index: 1, matches: [{ court: 1, teamA: ["eve", "ana"], teamB: ["ben", "cleo"] }], sittingOut: ["dan"], results: [{ court: 1, winner: "A" }] },
+      ],
+    });
+    expect(sessionParticipation(s)).toEqual([
+      { playerId: "ana", roundsPlayed: 2 },
+      { playerId: "ben", roundsPlayed: 2 },
+      { playerId: "cleo", roundsPlayed: 2 },
+      { playerId: "dan", roundsPlayed: 1 },
+      { playerId: "eve", roundsPlayed: 1 },
+    ]);
   });
 
   it("doesn't bill anyone for a pre-generated schedule they haven't played", () => {
@@ -154,7 +189,7 @@ describe("standings", () => {
     });
     const s = session({
       bookings: [{ court: 1, costCents: 4000, hours: 2 }],
-      rounds: [round(0, ["ana", "ben"], ["cleo", "dan"], [6, 2]), ...[1, 2, 3, 4, 5, 6, 7].map(fixture)],
+      rounds: [round(0, ["ana", "ben"], ["cleo", "dan"], "A"), ...[1, 2, 3, 4, 5, 6, 7].map(fixture)],
     });
 
     expect(sessionParticipation(s)).toEqual([
@@ -166,44 +201,12 @@ describe("standings", () => {
     expect(sessionCostSplit(s).perPlayer.map((p) => p.courtShareCents)).toEqual([1000, 1000, 1000, 1000]);
   });
 
-  it("aggregates several sessions into an all-time table", () => {
-    const one: PlayedRound[] = [
-      { round: { index: 0, matches: [{ court: 1, teamA: ["ana", "ben"], teamB: ["cleo", "dan"] }], sittingOut: [] }, results: [{ court: 1, teamAGames: 6, teamBGames: 2 }] },
-    ];
-    const two: PlayedRound[] = [
-      { round: { index: 0, matches: [{ court: 1, teamA: ["cleo", "dan"], teamB: ["ana", "ben"] }], sittingOut: [] }, results: [{ court: 1, teamAGames: 6, teamBGames: 3 }] },
-    ];
-    const table = combineStandings(players, [one, two]);
-    const byId = Object.fromEntries(table.map((r) => [r.playerId, r]));
-    expect(byId.ana).toMatchObject({ gamesWon: 9, gamesLost: 8, matchesWon: 1, matchesLost: 1, roundsPlayed: 2 });
-    expect(byId.cleo).toMatchObject({ gamesWon: 8, gamesLost: 9, matchesWon: 1, matchesLost: 1 });
-  });
-});
-
-describe("cost", () => {
-  it("counts rotations actually played as the split weight", () => {
-    const s = session({
-      playerIds: ["ana", "ben", "cleo", "dan", "eve"],
-      rounds: [
-        { index: 0, matches: [{ court: 1, teamA: ["ana", "ben"], teamB: ["cleo", "dan"] }], sittingOut: ["eve"], results: [{ court: 1, teamAGames: 6, teamBGames: 1 }] },
-        { index: 1, matches: [{ court: 1, teamA: ["eve", "ana"], teamB: ["ben", "cleo"] }], sittingOut: ["dan"], results: [{ court: 1, teamAGames: 6, teamBGames: 4 }] },
-      ],
-    });
-    expect(sessionParticipation(s)).toEqual([
-      { playerId: "ana", roundsPlayed: 2 },
-      { playerId: "ben", roundsPlayed: 2 },
-      { playerId: "cleo", roundsPlayed: 2 },
-      { playerId: "dan", roundsPlayed: 1 },
-      { playerId: "eve", roundsPlayed: 1 },
-    ]);
-  });
-
   it("splits the bill end to end, extras included", () => {
     const s = session({
       paidBy: "ana",
       rounds: [
-        round(0, ["ana", "ben"], ["cleo", "dan"], [6, 2]),
-        round(1, ["ana", "cleo"], ["ben", "dan"], [6, 4]),
+        round(0, ["ana", "ben"], ["cleo", "dan"], "A"),
+        round(1, ["ana", "cleo"], ["ben", "dan"], "A"),
       ],
       extras: [{ id: "x1", description: "Beer", costCents: 300, billedTo: ["ben"] }],
     });
@@ -220,7 +223,7 @@ describe("cost", () => {
   });
 });
 
-describe("suggestedRoundCount", () => {
+describe("planning rounds", () => {
   it.each([
     [2, 8],
     [3, 12],
@@ -232,5 +235,17 @@ describe("suggestedRoundCount", () => {
 
   it("never suggests fewer than one round", () => {
     expect(suggestedRoundCount(0)).toBe(1);
+  });
+
+  it("plans whole blocks for 8 players, never fewer than the four it takes to mix everyone", () => {
+    expect(plannedRoundCount(8, 2)).toBe(12);
+    expect(plannedRoundCount(8, 1)).toBe(12);
+    expect(plannedRoundCount(8, 4)).toBe(18);
+    expect(plannedRoundCount(8, 3.5)).toBe(15);
+  });
+
+  it("leaves smaller sessions on the plain hourly estimate", () => {
+    expect(plannedRoundCount(4, 2)).toBe(8);
+    expect(plannedRoundCount(5, 3)).toBe(12);
   });
 });

@@ -57,15 +57,58 @@ const SIX_PLAYER_PAIR_SETS: readonly (readonly (readonly [number, number])[])[] 
     ] as const,
 );
 
-/** Rounds until the sit-out and matchup pattern repeats (6 players also reshuffle partnerships). */
+/**
+ * 8 players across 2 courts run in blocks of 3 rounds. A block is one complete 4-player cycle on
+ * each court; between blocks, two players swap courts.
+ *
+ * These four court splits are chosen so that consecutive blocks differ by exactly a two-for-two
+ * swap *and* the first three blocks between them put all 28 possible player pairs on a court
+ * together. Since a block partners everyone on a court with everyone else, that means by the end of
+ * block 3 every player has partnered every other player at least once. The fourth block remixes
+ * again, and the sequence repeats.
+ */
+const EIGHT_PLAYER_BLOCKS: readonly (readonly [readonly number[], readonly number[]])[] = [
+  [
+    [0, 1, 2, 3],
+    [4, 5, 6, 7],
+  ],
+  [
+    [0, 1, 6, 7],
+    [2, 3, 4, 5],
+  ],
+  [
+    [0, 1, 4, 5],
+    [2, 3, 6, 7],
+  ],
+  [
+    [0, 2, 4, 6],
+    [1, 3, 5, 7],
+  ],
+];
+
+export const EIGHT_PLAYER_BLOCK_ROUNDS = 3;
+export const EIGHT_PLAYER_BLOCK_COUNT = EIGHT_PLAYER_BLOCKS.length;
+
+/** Which block a round belongs to. Block 0 is the opening one, before any court swap. */
+export function eightPlayerBlock(index: number): number {
+  return Math.floor(index / EIGHT_PLAYER_BLOCK_ROUNDS);
+}
+
+/** True when this round opens a new block, i.e. two players have just changed court. */
+export function isCourtSwapRound(playerCount: number, index: number): boolean {
+  return playerCount === 8 && index > 0 && index % EIGHT_PLAYER_BLOCK_ROUNDS === 0;
+}
+
+/** Rounds until the whole pattern repeats. */
 export function americanoCycleLength(playerCount: number): number {
   switch (playerCount) {
     case 4:
     case 6:
-    case 8:
       return 3;
     case 5:
       return 5;
+    case 8:
+      return EIGHT_PLAYER_BLOCK_ROUNDS * EIGHT_PLAYER_BLOCK_COUNT;
     default:
       throw new RotationConfigError(`No Americano cycle defined for ${playerCount} players.`);
   }
@@ -125,20 +168,24 @@ function sixPlayerRound(players: readonly PlayerId[], index: number): Round {
 }
 
 /**
- * 8 players, 2 courts: two fixed groups of 4, each running its own independent 4-player cycle on
- * its own court. Nobody crosses courts.
+ * 8 players, 2 courts. The roster arrives ordered as four pairs — `[a,b]`, `[c,d]`, `[e,f]`,
+ * `[g,h]` — which the session setup lets the group choose. Those pairs are the opening
+ * partnerships: the first two share court 1, the last two share court 2.
  *
- * Extension point: mixing players between courts (so the two groups aren't fixed for the whole
- * session) would replace this fixed split with a schedule over all 8 players. Deliberately not
- * built for the MVP — it changes the fairness guarantees and needs its own design.
+ * Each block is a full 4-player cycle on each court, so everyone partners everyone they share a
+ * court with. Between blocks two players change court, per `EIGHT_PLAYER_BLOCKS`.
  */
 function eightPlayerRound(players: readonly PlayerId[], index: number): Round {
-  const groupA = players.slice(0, 4);
-  const groupB = players.slice(4, 8);
-  const roundInCycle = index % 3;
+  const block = EIGHT_PLAYER_BLOCKS[eightPlayerBlock(index) % EIGHT_PLAYER_BLOCK_COUNT];
+  const roundInBlock = index % EIGHT_PLAYER_BLOCK_ROUNDS;
+  const onCourt = (court: 0 | 1) => block[court].map((i) => players[i]);
+
   return {
     index,
-    matches: [fourPlayerMatch(groupA, roundInCycle, 1), fourPlayerMatch(groupB, roundInCycle, 2)],
+    matches: [
+      fourPlayerMatch(onCourt(0), roundInBlock, 1),
+      fourPlayerMatch(onCourt(1), roundInBlock, 2),
+    ],
     sittingOut: [],
   };
 }

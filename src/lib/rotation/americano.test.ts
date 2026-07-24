@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   americanoCycleLength,
   americanoRound,
+  EIGHT_PLAYER_BLOCK_COUNT,
+  EIGHT_PLAYER_BLOCK_ROUNDS,
   generateAmericanoSchedule,
+  isCourtSwapRound,
   SIX_PLAYER_PARTNERSHIP_CYCLE_ROUNDS,
 } from "./americano";
 import { partnershipKey } from "./types";
@@ -161,43 +164,91 @@ describe("Americano — 6 players, 1 court", () => {
 
 describe("Americano — 8 players, 2 courts", () => {
   const players = roster(8);
+  const CYCLE = americanoCycleLength(8);
+
+  /** The four players sharing a court in a given round. */
+  const courtGroup = (round: Round, court: number) =>
+    [...round.matches[court].teamA, ...round.matches[court].teamB].sort();
+
+  /** The two four-player groups for the block starting at `blockIndex`. */
+  const blockGroups = (rounds: readonly Round[], blockIndex: number) => {
+    const first = rounds[blockIndex * EIGHT_PLAYER_BLOCK_ROUNDS];
+    return [courtGroup(first, 0), courtGroup(first, 1)];
+  };
 
   it("runs both courts every round with nobody sitting out", () => {
-    const rounds = schedule(8, 2, 12);
+    const rounds = schedule(8, 2, CYCLE);
     expectWellFormedRounds(rounds, players, 2);
     for (const round of rounds) expect(round.sittingOut).toEqual([]);
   });
 
-  it("keeps the two groups of four fixed for the whole session", () => {
-    const rounds = schedule(8, 2, 12);
-    const groupOf = (round: Round, court: number) =>
-      [...round.matches[court].teamA, ...round.matches[court].teamB].sort();
+  it("has a 12-round cycle of four 3-round blocks", () => {
+    expect(EIGHT_PLAYER_BLOCK_ROUNDS).toBe(3);
+    expect(EIGHT_PLAYER_BLOCK_COUNT).toBe(4);
+    expect(CYCLE).toBe(12);
+  });
 
-    const firstCourt = groupOf(rounds[0], 0);
-    const secondCourt = groupOf(rounds[0], 1);
-    expect(firstCourt).toEqual(["p1", "p2", "p3", "p4"]);
-    expect(secondCourt).toEqual(["p5", "p6", "p7", "p8"]);
+  it("opens with the chosen pairs playing each other", () => {
+    // The roster arrives as four pairs: p1+p2, p3+p4, p5+p6, p7+p8.
+    const [first] = schedule(8, 2, 1);
+    expect(first.matches[0]).toEqual({ court: 1, teamA: ["p1", "p2"], teamB: ["p3", "p4"] });
+    expect(first.matches[1]).toEqual({ court: 2, teamA: ["p5", "p6"], teamB: ["p7", "p8"] });
+  });
 
-    for (const round of rounds) {
-      expect(groupOf(round, 0), `round ${round.index} court 1`).toEqual(firstCourt);
-      expect(groupOf(round, 1), `round ${round.index} court 2`).toEqual(secondCourt);
+  it("keeps the courts settled for the three rounds of a block", () => {
+    const rounds = schedule(8, 2, CYCLE);
+    for (let block = 0; block < EIGHT_PLAYER_BLOCK_COUNT; block++) {
+      const [courtOne, courtTwo] = blockGroups(rounds, block);
+      for (let offset = 0; offset < EIGHT_PLAYER_BLOCK_ROUNDS; offset++) {
+        const round = rounds[block * EIGHT_PLAYER_BLOCK_ROUNDS + offset];
+        expect(courtGroup(round, 0), `block ${block} round ${offset} court 1`).toEqual(courtOne);
+        expect(courtGroup(round, 1), `block ${block} round ${offset} court 2`).toEqual(courtTwo);
+      }
     }
   });
 
-  it("gives each court its own complete 3-round 4-player cycle", () => {
-    const rounds = schedule(8, 2, 3);
-    for (const court of [0, 1]) {
-      const group = [...rounds[0].matches[court].teamA, ...rounds[0].matches[court].teamB];
-      const keys = rounds.flatMap((round) =>
-        [round.matches[court].teamA, round.matches[court].teamB].map(partnershipKey),
-      );
-      expect(keys).toHaveLength(6);
-      expect([...keys].sort()).toEqual(everyPartnershipKey(group));
+  it("partners everyone on a court with everyone else within each block", () => {
+    const rounds = schedule(8, 2, CYCLE);
+    for (let block = 0; block < EIGHT_PLAYER_BLOCK_COUNT; block++) {
+      const blockRounds = rounds.slice(block * 3, block * 3 + 3);
+      for (const court of [0, 1]) {
+        const group = [...blockRounds[0].matches[court].teamA, ...blockRounds[0].matches[court].teamB];
+        const keys = blockRounds.flatMap((round) =>
+          [round.matches[court].teamA, round.matches[court].teamB].map(partnershipKey),
+        );
+        expect(keys, `block ${block} court ${court + 1}`).toHaveLength(6);
+        expect([...keys].sort()).toEqual(everyPartnershipKey(group));
+      }
     }
+  });
+
+  it("moves exactly two players across courts between blocks", () => {
+    const rounds = schedule(8, 2, CYCLE + EIGHT_PLAYER_BLOCK_ROUNDS);
+    for (let block = 1; block <= EIGHT_PLAYER_BLOCK_COUNT; block++) {
+      const [previous] = blockGroups(rounds, block - 1);
+      const [current] = blockGroups(rounds, block);
+      const stayed = current.filter((id) => previous.includes(id));
+      expect(stayed, `block ${block - 1} -> ${block} should swap two players`).toHaveLength(2);
+    }
+  });
+
+  it("has everyone partner everyone by the end of the third block", () => {
+    const rounds = schedule(8, 2, 3 * EIGHT_PLAYER_BLOCK_ROUNDS);
+    const keys = new Set(allPartnershipKeys(rounds));
+    expect([...keys].sort()).toEqual(everyPartnershipKey(players));
+    expect(keys.size).toBe(28);
+  });
+
+  it("flags the rounds where players change court", () => {
+    expect(isCourtSwapRound(8, 0)).toBe(false);
+    expect([1, 2].map((i) => isCourtSwapRound(8, i))).toEqual([false, false]);
+    expect([3, 6, 9].map((i) => isCourtSwapRound(8, i))).toEqual([true, true, true]);
+    // Only the 8-player rotation moves people between courts.
+    expect(isCourtSwapRound(4, 3)).toBe(false);
   });
 
   it("never repeats a sit-out before everyone has sat", () => {
-    expectFairSitOuts(schedule(8, 2, 12), players);
+    expectFairSitOuts(schedule(8, 2, CYCLE), players);
   });
 });
 

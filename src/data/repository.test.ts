@@ -16,7 +16,6 @@ function newSession(playerIds: readonly string[], overrides: Partial<NewSession>
     courts: 1,
     mode: "americano",
     hours: 2,
-    gamesToWin: 6,
     bookings: [{ court: 1, costCents: 4200, hours: 2 }],
     ...overrides,
   };
@@ -146,7 +145,7 @@ function contractSuite(name: string, create: () => PadelRepository) {
               index: 0,
               matches: [{ court: 1, teamA: ["p1", "p2"], teamB: ["p3", "p4"] }],
               sittingOut: [],
-              results: [{ court: 1, teamAGames: 6, teamBGames: 3 }],
+              results: [{ court: 1, winner: "A" }],
             },
           ],
         });
@@ -154,7 +153,7 @@ function contractSuite(name: string, create: () => PadelRepository) {
         expect(updated.id).toBe(created.id);
         expect(updated.createdAt).toBe(created.createdAt);
         expect(updated.status).toBe("finished");
-        expect(updated.rounds[0].results[0].teamAGames).toBe(6);
+        expect(updated.rounds[0].results[0].winner).toBe("A");
         expect(updated.hours).toBe(2);
       });
 

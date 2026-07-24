@@ -1,6 +1,7 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 import type { Group, NewSession, Player, Session } from "@/lib/domain";
 import { newId } from "./ids";
+import { migrateSession } from "./migrate";
 import { NotFoundError, type PadelRepository, type SessionPatch } from "./repository";
 
 const DB_NAME = "padel-tracker";
@@ -123,11 +124,14 @@ export class IndexedDbRepository implements PadelRepository {
 
   async listSessions(): Promise<Session[]> {
     const sessions = await (await this.db()).getAll("sessions");
-    return sessions.sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
+    return sessions
+      .map(migrateSession)
+      .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
   }
 
   async getSession(id: string): Promise<Session | undefined> {
-    return (await this.db()).get("sessions", id);
+    const session = await (await this.db()).get("sessions", id);
+    return session && migrateSession(session);
   }
 
   async createSession(input: NewSession): Promise<Session> {

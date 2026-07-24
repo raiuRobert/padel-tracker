@@ -22,7 +22,7 @@ export interface MexicanoOptions {
 }
 
 export function emptyTally(playerId: PlayerId): PlayerTally {
-  return { playerId, gamesWon: 0, gamesLost: 0, roundsPlayed: 0, sitOuts: 0 };
+  return { playerId, points: 0, losses: 0, roundsPlayed: 0, sitOuts: 0 };
 }
 
 export function emptyTallies(players: readonly PlayerId[]): PlayerTally[] {
@@ -55,7 +55,7 @@ function chooseSitOuts(
     .map((entry) => entry.playerId);
 }
 
-/** Standings order: most games won, then fewest conceded, then roster order to stay deterministic. */
+/** Standings order: most points, then fewest losses, then roster order to stay deterministic. */
 function rankPlayers(
   order: readonly PlayerId[],
   tallies: Map<PlayerId, PlayerTally>,
@@ -66,8 +66,8 @@ function rankPlayers(
     .map((playerId, orderIndex) => ({ playerId, orderIndex, tally: tallies.get(playerId)! }))
     .sort(
       (a, b) =>
-        b.tally.gamesWon - a.tally.gamesWon ||
-        a.tally.gamesLost - b.tally.gamesLost ||
+        b.tally.points - a.tally.points ||
+        a.tally.losses - b.tally.losses ||
         a.orderIndex - b.orderIndex,
     )
     .map((entry) => entry.playerId);

@@ -42,13 +42,16 @@ export interface Session {
   /** ISO date of the outing (not the creation timestamp). */
   readonly date: string;
   readonly groupId?: string;
+  /**
+   * Everyone playing, in pair order. With 8 players this is four chosen pairs — `[a,b,c,d,e,f,g,h]`
+   * meaning a+b, c+d, e+f, g+h — which the rotation engine uses as the opening partnerships. The
+   * pairing lives in this ordering rather than a separate field so there's one source of truth.
+   */
   readonly playerIds: readonly PlayerId[];
   readonly courts: number;
   readonly mode: RotationMode;
   /** Planned length. Free-form rather than a 2/3/4 dropdown — sessions do overrun. */
   readonly hours: number;
-  /** Games that win a rotation. */
-  readonly gamesToWin: number;
   readonly bookings: readonly CourtBooking[];
   /** Who fronted the court fee. */
   readonly paidBy?: PlayerId;
@@ -66,17 +69,28 @@ export interface NewSession {
   readonly courts: number;
   readonly mode: RotationMode;
   readonly hours: number;
-  readonly gamesToWin: number;
   readonly bookings: readonly CourtBooking[];
   readonly paidBy?: PlayerId;
 }
 
 export const DEFAULT_HOURS = 2;
-export const DEFAULT_GAMES_TO_WIN = 6;
 
 /** A rotation runs roughly a quarter of an hour, so four an hour is a sensible starting point. */
 export const ROUNDS_PER_HOUR = 4;
 
 export function suggestedRoundCount(hours: number): number {
   return Math.max(1, Math.round(hours * ROUNDS_PER_HOUR));
+}
+
+/**
+ * How many rounds to put on the board when a session starts.
+ *
+ * 8 players run in blocks of three with a court swap between blocks, so stopping part-way through a
+ * block would leave the mixing half-done. Those sessions always plan whole blocks, and at least the
+ * four blocks it takes for everyone to have partnered everyone.
+ */
+export function plannedRoundCount(playerCount: number, hours: number): number {
+  const suggested = suggestedRoundCount(hours);
+  if (playerCount === 8) return Math.max(12, Math.ceil(suggested / 3) * 3);
+  return suggested;
 }

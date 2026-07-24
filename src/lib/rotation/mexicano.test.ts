@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { emptyTallies, mexicanoRound } from "./mexicano";
 import { seededRandom } from "./random";
-import type { Match, PlayerId, PlayerTally, Round } from "./types";
+import type { Match, PlayerId, PlayerTally, Round, Side } from "./types";
 import { RotationConfigError } from "./validation";
 import { computeTallies, type PlayedRound } from "../standings";
 import { expectFairSitOuts, expectWellFormedRounds, roster, sitOutCounts } from "./test-utils";
 
-/** Tallies where `order[0]` leads and each subsequent player trails by 5 games. */
+/** Tallies where `order[0]` leads and each subsequent player has one point fewer. */
 function standingsIn(order: readonly PlayerId[]): PlayerTally[] {
   return order.map((playerId, i) => ({
     playerId,
-    gamesWon: (order.length - i) * 5,
-    gamesLost: i * 5,
-    roundsPlayed: 1,
+    points: order.length - i,
+    losses: i,
+    roundsPlayed: order.length,
     sitOuts: 0,
   }));
 }
@@ -22,10 +22,7 @@ function simulate(
   players: readonly PlayerId[],
   courts: number,
   roundCount: number,
-  score: (match: Match, index: number) => { teamAGames: number; teamBGames: number } = () => ({
-    teamAGames: 6,
-    teamBGames: 4,
-  }),
+  winnerOf: (match: Match, index: number) => Side = () => "A",
 ): Round[] {
   const played: PlayedRound[] = [];
   const rounds: Round[] = [];
@@ -34,7 +31,7 @@ function simulate(
     rounds.push(round);
     played.push({
       round,
-      results: round.matches.map((match) => ({ court: match.court, ...score(match, index) })),
+      results: round.matches.map((match) => ({ court: match.court, winner: winnerOf(match, index) })),
     });
   }
   return rounds;
@@ -95,15 +92,15 @@ describe("Mexicano — standings-based pairing", () => {
     expect(reversed.matches[0].teamA).toEqual(["p4", "p1"]);
   });
 
-  it("breaks ties on games conceded, then roster order", () => {
+  it("breaks ties on losses, then roster order", () => {
     const players = roster(4);
     const tallies: PlayerTally[] = [
-      { playerId: "p1", gamesWon: 10, gamesLost: 8, roundsPlayed: 2, sitOuts: 0 },
-      { playerId: "p2", gamesWon: 10, gamesLost: 2, roundsPlayed: 2, sitOuts: 0 },
-      { playerId: "p3", gamesWon: 4, gamesLost: 6, roundsPlayed: 2, sitOuts: 0 },
-      { playerId: "p4", gamesWon: 4, gamesLost: 6, roundsPlayed: 2, sitOuts: 0 },
+      { playerId: "p1", points: 5, losses: 4, roundsPlayed: 9, sitOuts: 0 },
+      { playerId: "p2", points: 5, losses: 1, roundsPlayed: 6, sitOuts: 0 },
+      { playerId: "p3", points: 2, losses: 3, roundsPlayed: 5, sitOuts: 0 },
+      { playerId: "p4", points: 2, losses: 3, roundsPlayed: 5, sitOuts: 0 },
     ];
-    // Ranking: p2 (10 won, 2 lost), p1 (10 won, 8 lost), then p3 before p4 on roster order.
+    // Ranking: p2 (5 points, 1 loss), p1 (5 points, 4 losses), then p3 before p4 on roster order.
     const round = mexicanoRound({ players, courts: 1, index: 1, tallies });
     expect(round.matches[0].teamA).toEqual(["p2", "p4"]);
     expect(round.matches[0].teamB).toEqual(["p1", "p3"]);
@@ -122,11 +119,11 @@ describe("Mexicano — standings-based pairing", () => {
     const players = roster(5);
     // p1 has already sat once, so the four with zero sit-outs play and p2 (top of those) leads.
     const tallies: PlayerTally[] = [
-      { playerId: "p1", gamesWon: 30, gamesLost: 0, roundsPlayed: 1, sitOuts: 0 },
-      { playerId: "p2", gamesWon: 20, gamesLost: 5, roundsPlayed: 1, sitOuts: 1 },
-      { playerId: "p3", gamesWon: 15, gamesLost: 8, roundsPlayed: 1, sitOuts: 1 },
-      { playerId: "p4", gamesWon: 10, gamesLost: 9, roundsPlayed: 1, sitOuts: 1 },
-      { playerId: "p5", gamesWon: 5, gamesLost: 12, roundsPlayed: 1, sitOuts: 1 },
+      { playerId: "p1", points: 6, losses: 0, roundsPlayed: 6, sitOuts: 0 },
+      { playerId: "p2", points: 5, losses: 1, roundsPlayed: 6, sitOuts: 1 },
+      { playerId: "p3", points: 4, losses: 2, roundsPlayed: 6, sitOuts: 1 },
+      { playerId: "p4", points: 3, losses: 3, roundsPlayed: 6, sitOuts: 1 },
+      { playerId: "p5", points: 2, losses: 4, roundsPlayed: 6, sitOuts: 1 },
     ];
     const round = mexicanoRound({ players, courts: 1, index: 1, tallies });
 
@@ -172,22 +169,16 @@ describe("Mexicano — sit-out fairness", () => {
       [8, 2],
     ] as const) {
       const players = roster(count);
-      // Lopsided scores that would skew any score-driven sideline selection.
-      const rounds = simulate(players, courts, 20, (_match, index) => ({
-        teamAGames: 6,
-        teamBGames: index % 3,
-      }));
+      // Lopsided results that would skew any score-driven sideline selection.
+      const rounds = simulate(players, courts, 20, (_match, index) => (index % 3 === 0 ? "B" : "A"));
       expectFairSitOuts(rounds, players);
     }
   });
 
   it("benches a runaway leader on schedule rather than protecting them", () => {
     const players = roster(5);
-    // p1 wins every game they play by a mile; they must still sit as often as everyone else.
-    const rounds = simulate(players, 1, 10, (match) => ({
-      teamAGames: match.teamA.includes("p1") ? 6 : 0,
-      teamBGames: match.teamA.includes("p1") ? 0 : 6,
-    }));
+    // p1 wins every single game they play; they must still sit as often as everyone else.
+    const rounds = simulate(players, 1, 10, (match) => (match.teamA.includes("p1") ? "A" : "B"));
     const counts = sitOutCounts(rounds, players);
     expect([...counts.values()]).toEqual([2, 2, 2, 2, 2]);
   });

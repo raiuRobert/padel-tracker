@@ -1,6 +1,6 @@
 import { splitCosts, type CostSplit } from "./cost";
 import type { Session, SessionRound } from "./domain";
-import { nextRound } from "./rotation";
+import { isCourtSwapRound, nextRound } from "./rotation";
 import type { PlayerId, PlayerTally, Round } from "./rotation/types";
 import { computeStandings, computeTallies, type PlayedRound, type StandingsRow } from "./standings";
 
@@ -58,6 +58,14 @@ export function buildNextRound(session: Session): SessionRound {
     tallies: sessionTallies(session),
   });
   return { index: round.index, matches: round.matches, sittingOut: round.sittingOut, results: [] };
+}
+
+/**
+ * True when a round begins a new block of the 8-player rotation — the point where two players
+ * change court. Worth flagging in the UI, because it's the one moment people have to move.
+ */
+export function startsWithCourtSwap(session: Session, index: number): boolean {
+  return session.mode === "americano" && isCourtSwapRound(session.playerIds.length, index);
 }
 
 /** Rotations each player was actually on court for — the weight the court fee is split by. */

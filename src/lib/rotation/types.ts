@@ -29,14 +29,21 @@ export interface Round {
   readonly sittingOut: readonly PlayerId[];
 }
 
+/** Which side of the net won a game. */
+export type Side = "A" | "B";
+
 /**
  * Cumulative per-player state. Americano ignores this entirely; Mexicano ranks on it to build the
  * next round, and both modes use `sitOuts` to keep the sideline fair.
+ *
+ * A game is won outright by one team — there's no game score to keep — so every player on the
+ * winning side takes a point.
  */
 export interface PlayerTally {
   readonly playerId: PlayerId;
-  readonly gamesWon: number;
-  readonly gamesLost: number;
+  /** Games won. One point per game, per player on the winning team. */
+  readonly points: number;
+  readonly losses: number;
   readonly roundsPlayed: number;
   readonly sitOuts: number;
 }
