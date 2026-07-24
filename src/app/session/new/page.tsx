@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { PlayerPicker } from "@/components/PlayerPicker";
 import {
+  Alert,
   Button,
   ButtonLink,
   Card,
@@ -21,7 +22,7 @@ import { courtCostCents, toCents } from "@/lib/cost";
 import { CURRENCIES, currencySymbol } from "@/lib/currency";
 import { DEFAULT_HOURS, type NewSession } from "@/lib/domain";
 import { formatPair, todayIso } from "@/lib/format";
-import { describeSupportedConfigurations, isSupportedConfiguration } from "@/lib/rotation";
+import { isSupportedConfiguration, SUPPORTED_CONFIGURATIONS } from "@/lib/rotation";
 import type { RotationMode } from "@/lib/rotation/types";
 import { useData } from "../../providers";
 
@@ -77,10 +78,12 @@ export default function NewSessionPage() {
       return t("setup.goodToGo", { players: n("player", selected.length), courts: n("court", courts) });
     }
     if (selected.length === 7) return t("setup.sevenPlayers");
-    return t("setup.unsupported", {
-      count: selected.length,
-      options: describeSupportedConfigurations(),
-    });
+    // Built from translated pieces rather than the engine's English helper, so the list of
+    // supported setups reads correctly in whichever language is active.
+    const options = SUPPORTED_CONFIGURATIONS.map((c) =>
+      t("setup.configOption", { players: n("player", c.players), courts: n("court", c.courts) }),
+    ).join(", ");
+    return t("setup.unsupported", { count: selected.length, options });
   }, [selected.length, valid, courts, t, n]);
 
   if (!ready) return <Loading label={t("common.loading")} />;
@@ -168,7 +171,13 @@ export default function NewSessionPage() {
         ) : null}
 
         <PlayerPicker players={activePlayers} selected={selected} onToggle={toggle} showOrder={pairing} />
-        <p className={`mt-3 text-sm ${valid ? "font-semibold text-accent" : "text-muted"}`}>{message}</p>
+        <div className="mt-3">
+          {selected.length === 0 ? (
+            <p className="text-sm text-muted">{message}</p>
+          ) : (
+            <Alert tone={valid ? "success" : "danger"}>{message}</Alert>
+          )}
+        </div>
 
         {pairing ? (
           <div className="mt-4">

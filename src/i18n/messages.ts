@@ -86,6 +86,7 @@ const en = {
   "setup.whosPlaying": "Who's playing",
   "setup.pickPlayers": "Pick who turned up.",
   "setup.goodToGo": "{players} on {courts} — good to go.",
+  "setup.configOption": "{players} on {courts}",
   "setup.sevenPlayers": "Seven is the awkward one — play 6 or 8, or add a stand-in.",
   "setup.unsupported": "{count} players doesn't fit a court setup we can rotate fairly. Supported: {options}.",
   "setup.pairs": "Opening pairs",
@@ -282,6 +283,7 @@ const ro: Record<MessageKey, string> = {
   "setup.whosPlaying": "Cine joacă",
   "setup.pickPlayers": "Alege cine a venit.",
   "setup.goodToGo": "{players} pe {courts} — se poate începe.",
+  "setup.configOption": "{players} pe {courts}",
   "setup.sevenPlayers": "Șapte e numărul incomod — jucați 6 sau 8, ori mai găsiți pe cineva.",
   "setup.unsupported":
     "{count} jucători nu încap într-o formulă pe care o putem roti corect. Se poate juca: {options}.",

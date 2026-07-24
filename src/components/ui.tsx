@@ -146,6 +146,46 @@ export function Badge({ children, tone = "muted" }: { children: ReactNode; tone?
   return <span className={`eyebrow rounded px-2 py-1 ${tones[tone]}`}>{children}</span>;
 }
 
+const ALERT_TONES = {
+  danger: {
+    box: "border-danger/50 bg-danger/15 text-danger",
+    icon: <path d="M12 3.5 22 20H2L12 3.5ZM12 9.5v4.5M12 17.2v.1" />,
+  },
+  success: {
+    box: "border-accent/50 bg-accent/12 text-accent",
+    icon: <path d="M4 12.5 9.5 18 20 6.5" />,
+  },
+} as const;
+
+/**
+ * A prominent inline message. `danger` is a red banner for warnings — not enough players for a
+ * court, and anything else that should stop someone in their tracks — so they read as warnings at a
+ * glance rather than as quiet grey hints.
+ */
+export function Alert({ tone = "danger", children }: { tone?: keyof typeof ALERT_TONES; children: ReactNode }) {
+  const { box, icon } = ALERT_TONES[tone];
+  return (
+    <div
+      role={tone === "danger" ? "alert" : "status"}
+      className={`flex items-start gap-2.5 rounded-lg border px-3.5 py-3 text-sm font-semibold ${box}`}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        className="mt-px size-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        {icon}
+      </svg>
+      <span className="leading-snug">{children}</span>
+    </div>
+  );
+}
+
 export function PageTitle({ title, subtitle }: { title: string; subtitle?: ReactNode }) {
   return (
     <header className="mb-7">
