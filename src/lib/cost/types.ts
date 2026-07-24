@@ -11,9 +11,16 @@ import type { PlayerId } from "../rotation/types";
 export interface CourtBooking {
   /** 1-based court number. */
   readonly court: number;
+  /** Total for this court: the per-hour rate times the hours booked. What the split works off. */
   readonly costCents: number;
-  /** Informational — two courts can be booked for different lengths of time. */
+  /** Two courts can be booked for different lengths of time. */
   readonly hours: number;
+  /**
+   * The per-hour rate the total was built from — what the user actually enters. Optional so
+   * sessions written before per-hour pricing still load; `ratePerHourCents()` derives it when it's
+   * missing.
+   */
+  readonly ratePerHourCents?: number;
 }
 
 /** How much of the session a player was actually present for. */

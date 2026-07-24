@@ -5,15 +5,16 @@ import { useState } from "react";
 import { ExtraForm } from "@/components/ExtraForm";
 import { Button, Card, EmptyState, Field, Input, SectionTitle, Select } from "@/components/ui";
 import { useI18n } from "@/i18n";
-import { toCents, type Extra } from "@/lib/cost";
-import { centsToInput, CURRENCY, formatMoney } from "@/lib/format";
+import { courtCostCents, ratePerHourCents, toCents, type Extra } from "@/lib/cost";
+import { CURRENCIES, currencySymbol } from "@/lib/currency";
+import { centsToInput } from "@/lib/format";
 import { sessionCostSplit } from "@/lib/session";
 import { useData } from "../../../providers";
 
 export default function SessionCostsPage() {
   const { id } = useParams<{ id: string }>();
   const { sessions, playerName, patchSession } = useData();
-  const { t, n } = useI18n();
+  const { t, n, money } = useI18n();
   const [addingExtra, setAddingExtra] = useState(false);
   const [editingCost, setEditingCost] = useState(false);
 
@@ -21,6 +22,7 @@ export default function SessionCostsPage() {
   if (!session) return null;
 
   const split = sessionCostSplit(session);
+  const cash = (cents: number) => money(cents, session.currency);
 
   async function addExtra(extra: Extra) {
     if (!session) return;
@@ -52,22 +54,29 @@ export default function SessionCostsPage() {
           </SectionTitle>
           <Card className="p-4">
             <dl className="space-y-2.5 text-sm">
-              <div className="flex justify-between gap-3">
-                <dt className="text-muted">
-                  {t("costs.courtsLine", {
-                    courts: n("court", session.courts),
-                    hours: n("hour", split.totalHours),
-                  })}
-                </dt>
-                <dd className="score-figure">{formatMoney(split.courtCostCents)}</dd>
-              </div>
+              {session.bookings.map((booking, index) => (
+                <div key={booking.court} className="flex justify-between gap-3">
+                  <dt className="min-w-0 text-muted">
+                    <span className="font-semibold text-ink">
+                      {session.bookings.length === 1
+                        ? t("costs.court")
+                        : t("costs.courtN", { number: index + 1 })}
+                    </span>{" "}
+                    · {t("costs.rateTimesHours", {
+                      rate: cash(ratePerHourCents(booking)),
+                      hours: n("hour", booking.hours),
+                    })}
+                  </dt>
+                  <dd className="score-figure">{cash(booking.costCents)}</dd>
+                </div>
+              ))}
               <div className="flex justify-between gap-3">
                 <dt className="text-muted">{t("costs.extras")}</dt>
-                <dd className="score-figure">{formatMoney(split.extrasCostCents)}</dd>
+                <dd className="score-figure">{cash(split.extrasCostCents)}</dd>
               </div>
               <div className="flex items-center justify-between gap-3 border-t border-line pt-3">
                 <dt className="eyebrow">{t("costs.total")}</dt>
-                <dd className="score-figure text-2xl text-accent">{formatMoney(split.grandTotalCents)}</dd>
+                <dd className="score-figure text-2xl text-accent">{cash(split.grandTotalCents)}</dd>
               </div>
               {session.paidBy ? (
                 <div className="flex justify-between gap-3 pt-1">
@@ -99,17 +108,17 @@ export default function SessionCostsPage() {
                 <Card key={player.playerId} className="p-4">
                   <div className="flex items-baseline justify-between gap-3">
                     <p className="truncate font-bold tracking-tight">{playerName(player.playerId)}</p>
-                    <p className="score-figure text-xl">{formatMoney(player.totalCents)}</p>
+                    <p className="score-figure text-xl">{cash(player.totalCents)}</p>
                   </div>
                   <dl className="mt-2.5 space-y-1 text-sm text-muted">
                     <div className="flex justify-between gap-3">
                       <dt>{t("costs.courtLine", { rotations: n("rotation", player.roundsPlayed) })}</dt>
-                      <dd className="tabular-nums">{formatMoney(player.courtShareCents)}</dd>
+                      <dd className="tabular-nums">{cash(player.courtShareCents)}</dd>
                     </div>
                     {player.extras.map((extra) => (
                       <div key={extra.extraId} className="flex justify-between gap-3">
                         <dt className="truncate">{extra.description}</dt>
-                        <dd className="tabular-nums">{formatMoney(extra.shareCents)}</dd>
+                        <dd className="tabular-nums">{cash(extra.shareCents)}</dd>
                       </div>
                     ))}
                   </dl>
@@ -135,6 +144,7 @@ export default function SessionCostsPage() {
         {addingExtra ? (
           <ExtraForm
             playerIds={session.playerIds}
+            currency={session.currency}
             nameOf={playerName}
             onAdd={addExtra}
             onCancel={() => setAddingExtra(false)}
@@ -151,7 +161,7 @@ export default function SessionCostsPage() {
                     {extra.billedTo.map(playerName).join(", ")}
                   </p>
                 </div>
-                <span className="score-figure shrink-0 text-sm">{formatMoney(extra.costCents)}</span>
+                <span className="score-figure shrink-0 text-sm">{cash(extra.costCents)}</span>
                 <Button
                   variant="danger"
                   className="h-10 min-h-10 shrink-0 px-2"
@@ -181,7 +191,7 @@ export default function SessionCostsPage() {
                   <span className="mx-1.5 text-muted">{t("costs.owes")}</span>
                   <span className="font-bold">{playerName(settlement.to)}</span>
                 </span>
-                <span className="score-figure shrink-0 text-base">{formatMoney(settlement.amountCents)}</span>
+                <span className="score-figure shrink-0 text-base">{cash(settlement.amountCents)}</span>
               </Card>
             ))}
           </div>
@@ -196,23 +206,25 @@ function CostEditor({ sessionId, onDone }: { sessionId: string; onDone: () => vo
   const { t } = useI18n();
   const session = sessions.find((s) => s.id === sessionId)!;
 
+  const [currency, setCurrency] = useState(session.currency);
   const [bookings, setBookings] = useState(
-    session.bookings.map((booking) => ({
-      cost: booking.costCents ? centsToInput(booking.costCents) : "",
-      hours: String(booking.hours),
-    })),
+    session.bookings.map((booking) => {
+      const rate = ratePerHourCents(booking);
+      return { rate: rate ? centsToInput(rate) : "", hours: String(booking.hours) };
+    }),
   );
   const [paidBy, setPaidBy] = useState(session.paidBy ?? "");
 
   async function save() {
-    const parsed = bookings.map((booking, index) => ({
-      court: index + 1,
-      costCents: toCents(Number(booking.cost) || 0),
-      hours: Number(booking.hours) || session.hours,
-    }));
+    const parsed = bookings.map((booking, index) => {
+      const rateCents = toCents(Number(booking.rate) || 0);
+      const hours = Number(booking.hours) || session.hours;
+      return { court: index + 1, ratePerHourCents: rateCents, hours, costCents: courtCostCents(rateCents, hours) };
+    });
     await patchSession(sessionId, {
       bookings: parsed,
       hours: Math.max(...parsed.map((b) => b.hours)),
+      currency,
       paidBy: paidBy || undefined,
     });
     onDone();
@@ -221,21 +233,36 @@ function CostEditor({ sessionId, onDone }: { sessionId: string; onDone: () => vo
   return (
     <Card className="space-y-5 p-4">
       <SectionTitle>{t("costs.theBill")}</SectionTitle>
+
+      <Field label={t("setup.currency")}>
+        <Select value={currency} onChange={(e) => setCurrency(e.target.value as typeof currency)}>
+          {CURRENCIES.map((c) => (
+            <option key={c.code} value={c.code}>
+              {c.code} ({c.symbol})
+            </option>
+          ))}
+        </Select>
+      </Field>
+
       {bookings.map((booking, index) => (
         <div key={index} className="grid grid-cols-2 gap-3">
           <Field
-            label={bookings.length === 1 ? t("setup.courtCost") : t("setup.courtNCost", { number: index + 1 })}
+            label={
+              bookings.length === 1
+                ? t("setup.pricePerHour")
+                : t("setup.courtNPricePerHour", { number: index + 1 })
+            }
           >
             <Input
               type="number"
               inputMode="decimal"
               min={0}
               step="0.01"
-              placeholder={`${CURRENCY}0.00`}
-              value={booking.cost}
+              placeholder={`${currencySymbol(currency)}0.00`}
+              value={booking.rate}
               onChange={(e) =>
                 setBookings((current) =>
-                  current.map((b, i) => (i === index ? { ...b, cost: e.target.value } : b)),
+                  current.map((b, i) => (i === index ? { ...b, rate: e.target.value } : b)),
                 )
               }
             />

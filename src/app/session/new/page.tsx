@@ -17,15 +17,17 @@ import {
   Select,
 } from "@/components/ui";
 import { useI18n } from "@/i18n";
-import { toCents } from "@/lib/cost";
+import { courtCostCents, toCents } from "@/lib/cost";
+import { CURRENCIES, currencySymbol } from "@/lib/currency";
 import { DEFAULT_HOURS, type NewSession } from "@/lib/domain";
-import { CURRENCY, formatPair, todayIso } from "@/lib/format";
+import { formatPair, todayIso } from "@/lib/format";
 import { describeSupportedConfigurations, isSupportedConfiguration } from "@/lib/rotation";
 import type { RotationMode } from "@/lib/rotation/types";
 import { useData } from "../../providers";
 
 interface BookingDraft {
-  cost: string;
+  /** Price per hour, as typed. */
+  rate: string;
   hours: string;
 }
 
@@ -35,14 +37,14 @@ const COURTS_FOR_PLAYERS: Record<number, number> = { 4: 1, 5: 1, 6: 1, 8: 2 };
 export default function NewSessionPage() {
   const router = useRouter();
   const { ready, activePlayers, groups, startSession } = useData();
-  const { t, n } = useI18n();
+  const { t, n, currency, setCurrency } = useI18n();
 
   const [date, setDate] = useState(todayIso());
   const [selected, setSelected] = useState<string[]>([]);
   const [groupId, setGroupId] = useState<string | undefined>();
   const [courts, setCourts] = useState(1);
   const [mode, setMode] = useState<RotationMode>("americano");
-  const [bookings, setBookings] = useState<BookingDraft[]>([{ cost: "", hours: String(DEFAULT_HOURS) }]);
+  const [bookings, setBookings] = useState<BookingDraft[]>([{ rate: "", hours: String(DEFAULT_HOURS) }]);
   const [paidBy, setPaidBy] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -51,8 +53,8 @@ export default function NewSessionPage() {
     setCourts(next);
     setBookings((current) => {
       if (current.length === next) return current;
-      const template = current[0] ?? { cost: "", hours: String(DEFAULT_HOURS) };
-      return Array.from({ length: next }, (_, i) => current[i] ?? { ...template, cost: "" });
+      const template = current[0] ?? { rate: "", hours: String(DEFAULT_HOURS) };
+      return Array.from({ length: next }, (_, i) => current[i] ?? { ...template, rate: "" });
     });
   }
 
@@ -118,11 +120,11 @@ export default function NewSessionPage() {
   async function start() {
     setSaving(true);
     try {
-      const parsedBookings = bookings.map((booking, index) => ({
-        court: index + 1,
-        costCents: toCents(Number(booking.cost) || 0),
-        hours: Number(booking.hours) || DEFAULT_HOURS,
-      }));
+      const parsedBookings = bookings.map((booking, index) => {
+        const ratePerHourCents = toCents(Number(booking.rate) || 0);
+        const hours = Number(booking.hours) || DEFAULT_HOURS;
+        return { court: index + 1, ratePerHourCents, hours, costCents: courtCostCents(ratePerHourCents, hours) };
+      });
 
       const input: NewSession = {
         date,
@@ -134,6 +136,7 @@ export default function NewSessionPage() {
         // Courts run concurrently, so the session is as long as the longest booking.
         hours: Math.max(...parsedBookings.map((b) => b.hours)),
         bookings: parsedBookings,
+        currency,
         paidBy: paidBy || undefined,
       };
       const session = await startSession(input);
@@ -226,21 +229,33 @@ export default function NewSessionPage() {
       <section className="mb-8">
         <SectionTitle>{t("setup.cost")}</SectionTitle>
         <Card className="space-y-5 p-4">
+          <Field label={t("setup.currency")}>
+            <Select value={currency} onChange={(e) => setCurrency(e.target.value as typeof currency)}>
+              {CURRENCIES.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.code} ({c.symbol})
+                </option>
+              ))}
+            </Select>
+          </Field>
+
           {bookings.map((booking, index) => (
             <div key={index} className="grid grid-cols-2 gap-3">
               <Field
-                label={courts === 1 ? t("setup.courtCost") : t("setup.courtNCost", { number: index + 1 })}
+                label={
+                  courts === 1 ? t("setup.pricePerHour") : t("setup.courtNPricePerHour", { number: index + 1 })
+                }
               >
                 <Input
                   type="number"
                   inputMode="decimal"
                   min={0}
                   step="0.01"
-                  placeholder={`${CURRENCY}0.00`}
-                  value={booking.cost}
+                  placeholder={`${currencySymbol(currency)}0.00`}
+                  value={booking.rate}
                   onChange={(e) =>
                     setBookings((current) =>
-                      current.map((b, i) => (i === index ? { ...b, cost: e.target.value } : b)),
+                      current.map((b, i) => (i === index ? { ...b, rate: e.target.value } : b)),
                     )
                   }
                 />

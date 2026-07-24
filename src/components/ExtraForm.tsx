@@ -4,7 +4,7 @@ import { useState } from "react";
 import { newId } from "@/data/ids";
 import { useI18n } from "@/i18n";
 import { toCents, type Extra } from "@/lib/cost";
-import { CURRENCY } from "@/lib/format";
+import { currencySymbol, type CurrencyCode } from "@/lib/currency";
 import { Button, Card, Field, Input, SectionTitle } from "./ui";
 
 /**
@@ -13,11 +13,13 @@ import { Button, Card, Field, Input, SectionTitle } from "./ui";
  */
 export function ExtraForm({
   playerIds,
+  currency,
   nameOf,
   onAdd,
   onCancel,
 }: {
   playerIds: readonly string[];
+  currency: CurrencyCode;
   nameOf: (id: string) => string;
   onAdd: (extra: Extra) => Promise<void> | void;
   onCancel: () => void;
@@ -67,7 +69,7 @@ export function ExtraForm({
             inputMode="decimal"
             min={0}
             step="0.01"
-            placeholder={`${CURRENCY}0.00`}
+            placeholder={`${currencySymbol(currency)}0.00`}
             value={cost}
             onChange={(e) => setCost(e.target.value)}
           />

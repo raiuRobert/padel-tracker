@@ -1,3 +1,4 @@
+import { DEFAULT_CURRENCY } from "@/lib/currency";
 import type { Session } from "@/lib/domain";
 
 /**
@@ -39,8 +40,12 @@ export function migrateSession(session: Session): Session {
       .filter((result) => result !== null),
   }));
 
+  // Sessions predating selectable currencies were all billed in euros.
+  const needsCurrency = raw.currency === undefined;
+
   const changed =
     raw.gamesToWin !== undefined ||
+    needsCurrency ||
     rounds.some((round, i) => round.results.length !== session.rounds[i].results.length) ||
     rounds.some((round, i) =>
       round.results.some((result, j) => result.winner !== session.rounds[i].results[j]?.winner),
@@ -48,7 +53,11 @@ export function migrateSession(session: Session): Session {
 
   if (!changed) return session;
 
-  const migrated: Session & { gamesToWin?: number } = { ...raw, rounds };
+  const migrated: Session & { gamesToWin?: number } = {
+    ...raw,
+    rounds,
+    currency: raw.currency ?? DEFAULT_CURRENCY,
+  };
   delete migrated.gamesToWin;
   return migrated;
 }

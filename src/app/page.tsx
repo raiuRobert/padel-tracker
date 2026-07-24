@@ -3,13 +3,12 @@
 import Link from "next/link";
 import { Badge, ButtonLink, Card, EmptyState, Loading, PageTitle, SectionTitle } from "@/components/ui";
 import { useI18n } from "@/i18n";
-import { formatMoney } from "@/lib/format";
 import { scoredRoundCount, sessionCostSplit } from "@/lib/session";
 import { useData } from "./providers";
 
 export default function HomePage() {
   const { ready, sessions, activePlayers } = useData();
-  const { t, n, formatDate } = useI18n();
+  const { t, n, money, formatDate } = useI18n();
 
   if (!ready) return <Loading label={t("common.loading")} />;
 
@@ -87,7 +86,7 @@ export default function HomePage() {
                     </p>
                   </div>
                   <span className="score-figure shrink-0 text-sm text-muted">
-                    {formatMoney(sessionCostSplit(session).grandTotalCents)}
+                    {money(sessionCostSplit(session).grandTotalCents, session.currency)}
                   </span>
                 </Card>
               </Link>

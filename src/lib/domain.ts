@@ -1,4 +1,5 @@
 import type { CourtBooking, Extra } from "./cost/types";
+import type { CurrencyCode } from "./currency";
 import type { Match, PlayerId, RotationMode } from "./rotation/types";
 import type { MatchResult } from "./standings";
 
@@ -53,6 +54,8 @@ export interface Session {
   /** Planned length. Free-form rather than a 2/3/4 dropdown — sessions do overrun. */
   readonly hours: number;
   readonly bookings: readonly CourtBooking[];
+  /** Currency the bill is in. Stored per session so past sessions keep the currency they were in. */
+  readonly currency: CurrencyCode;
   /** Who fronted the court fee. */
   readonly paidBy?: PlayerId;
   readonly rounds: readonly SessionRound[];
@@ -70,6 +73,7 @@ export interface NewSession {
   readonly mode: RotationMode;
   readonly hours: number;
   readonly bookings: readonly CourtBooking[];
+  readonly currency: CurrencyCode;
   readonly paidBy?: PlayerId;
 }
 

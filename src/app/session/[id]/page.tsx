@@ -90,6 +90,7 @@ export default function SessionPlayPage() {
         <div className="mb-7">
           <ExtraForm
             playerIds={session.playerIds}
+            currency={session.currency}
             nameOf={playerName}
             onAdd={addExtra}
             onCancel={() => setAddingExtra(false)}

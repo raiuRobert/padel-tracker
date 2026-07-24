@@ -81,13 +81,18 @@ on fewest losses.
 
 ## Cost splitting
 
-Each player's share of the court fee is proportional to the number of rotations they actually
-played. Arrive late or leave early and you pay less. On top of that, **extras** (a drink from the
-fridge, snacks) are billed to one specific player or split across a chosen subset — not necessarily
-everyone in the session.
+The court fee is entered as a **price per hour** (per court, so two courts booked for different
+lengths or rates each get their own), and the total is the rate times the hours. Each player's
+share is proportional to the number of rotations they actually played — arrive late or leave early
+and you pay less. On top of that, **extras** (a drink from the fridge, snacks) are billed to one
+specific player or split across a chosen subset — not necessarily everyone in the session.
 
 The summary shows court share, extras, and total separately for each player, so it's always obvious
 why someone owes what they owe, plus who owes what to whoever fronted the court payment.
+
+Pick the **currency** per session from a short list (EUR, RON, USD, GBP, PLN, CHF, BGN, MDL); your
+last choice is remembered as the default. Amounts are formatted for the chosen language, so a
+Romanian sees `60,00 RON/oră` where an English speaker sees `RON 60.00/hr`.
 
 ## Architecture
 
@@ -96,6 +101,7 @@ src/
   lib/            pure TypeScript — no React, no storage, no DOM
     rotation/     schedule generation for both modes
     cost/         cost-split calculation
+    currency.ts   supported currencies and locale-aware money formatting
     standings.ts  played rounds → leaderboards
     session.ts    glue between a stored session and the engines above
   data/           storage layer behind a repository interface (IndexedDB via idb),
@@ -127,8 +133,12 @@ Decisions made without asking, noted here so they're easy to revisit:
 - **The court fee is pooled across both courts** rather than charging each court to the four people
   on it. It's one group settling one bill.
 - **Money is handled in integer cents** and split by largest remainder, so shares always add up to
-  the bill exactly.
-- **Currency is a constant** (`CURRENCY` in `src/lib/format.ts`), defaulting to €.
+  the bill exactly. Only two-decimal currencies are offered, so the hundredths assumption always
+  holds — a zero-decimal currency like JPY would break it.
+- **Court cost is entered per hour**; the stored total is the rate times the hours. Sessions saved
+  before this recover the rate from their total.
+- **Currency is chosen per session** (`src/lib/currency.ts`), so past sessions keep the currency
+  they were played in. Old sessions without one default to €.
 
 ## Out of scope (for now)
 

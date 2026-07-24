@@ -16,7 +16,8 @@ function newSession(playerIds: readonly string[], overrides: Partial<NewSession>
     courts: 1,
     mode: "americano",
     hours: 2,
-    bookings: [{ court: 1, costCents: 4200, hours: 2 }],
+    bookings: [{ court: 1, costCents: 4200, hours: 2, ratePerHourCents: 2100 }],
+    currency: "EUR",
     ...overrides,
   };
 }

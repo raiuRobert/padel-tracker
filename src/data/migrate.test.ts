@@ -50,10 +50,19 @@ describe("migrateSession", () => {
     expect("gamesToWin" in migrated).toBe(false);
   });
 
+  it("defaults a currency-less session to euros", () => {
+    const migrated = migrateSession(legacySession([{ court: 1, winner: "A" }]));
+    expect(migrated.currency).toBe("EUR");
+  });
+
+  it("leaves a session that already has a currency in that currency", () => {
+    const current = { ...legacySession([{ court: 1, winner: "B" }]), currency: "RON" } as Session;
+    delete (current as Session & { gamesToWin?: number }).gamesToWin;
+    expect(migrateSession(current).currency).toBe("RON");
+  });
+
   it("leaves an already-migrated session untouched", () => {
-    const current: Session = {
-      ...legacySession([{ court: 1, winner: "B" }]),
-    };
+    const current: Session = { ...legacySession([{ court: 1, winner: "B" }]), currency: "EUR" } as Session;
     delete (current as Session & { gamesToWin?: number }).gamesToWin;
 
     expect(migrateSession(current)).toBe(current);
