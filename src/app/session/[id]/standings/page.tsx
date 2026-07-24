@@ -3,12 +3,14 @@
 import { useParams } from "next/navigation";
 import { StandingsTable } from "@/components/StandingsTable";
 import { EmptyState, SectionTitle } from "@/components/ui";
+import { useI18n } from "@/i18n";
 import { scoredRoundCount, sessionStandings } from "@/lib/session";
 import { useData } from "../../../providers";
 
 export default function SessionStandingsPage() {
   const { id } = useParams<{ id: string }>();
   const { sessions, playerName } = useData();
+  const { t, n } = useI18n();
 
   const session = sessions.find((s) => s.id === id);
   if (!session) return null;
@@ -16,17 +18,13 @@ export default function SessionStandingsPage() {
   const played = scoredRoundCount(session);
 
   if (played === 0) {
-    return (
-      <EmptyState icon="📊" title="No scores yet">
-        Play a round and enter the score — the leaderboard fills in from there.
-      </EmptyState>
-    );
+    return <EmptyState title={t("standings.noScoresTitle")}>{t("standings.noScoresBody")}</EmptyState>;
   }
 
   return (
     <section>
-      <SectionTitle action={<span className="text-xs text-muted">games won</span>}>
-        After {played} {played === 1 ? "round" : "rounds"}
+      <SectionTitle action={<span className="eyebrow text-muted">{t("standings.points")}</span>}>
+        {t("standings.after", { rounds: n("round", played) })}
       </SectionTitle>
       <StandingsTable rows={sessionStandings(session)} nameOf={playerName} />
     </section>

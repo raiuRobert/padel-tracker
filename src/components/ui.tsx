@@ -2,20 +2,21 @@ import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 
 /**
- * Small shared primitives. Everything is sized for a thumb: 44px minimum tap targets, generous
- * spacing, no hover-only affordances.
+ * Shared primitives, styled as a scoreboard rather than a dashboard: flat surfaces, square-ish
+ * corners, all-caps section labels, and type doing the work that borders used to. Everything is
+ * sized for a thumb — 44px minimum targets, no hover-only affordances.
  */
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 
 const BUTTON_BASE =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-base font-semibold " +
-  "transition-colors disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 " +
-  "focus-visible:outline-offset-2 focus-visible:outline-accent";
+  "inline-flex min-h-12 items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold " +
+  "uppercase tracking-wide transition-colors disabled:cursor-not-allowed disabled:opacity-35 " +
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   primary: "bg-accent text-accent-ink hover:bg-accent/90 active:bg-accent/80",
-  secondary: "bg-raised text-ink hover:bg-line active:bg-line/80",
+  secondary: "bg-raised text-ink hover:bg-line",
   ghost: "text-muted hover:text-ink hover:bg-raised",
   danger: "bg-transparent text-danger hover:bg-danger/10",
 };
@@ -36,40 +37,38 @@ export function ButtonLink({
   return <Link className={`${BUTTON_BASE} ${BUTTON_VARIANTS[variant]} ${className}`} {...props} />;
 }
 
+/** A flat panel. No border — the background step is enough separation on a dark canvas. */
 export function Card({ className = "", ...props }: ComponentProps<"div">) {
-  return <div className={`rounded-2xl border border-line bg-surface ${className}`} {...props} />;
+  return <div className={`rounded-xl bg-surface ${className}`} {...props} />;
 }
 
+/** Section heading: an accent tick, an all-caps label, and optional action on the right. */
 export function SectionTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
-    <div className="mb-3 flex items-baseline justify-between gap-3">
-      <h2 className="text-sm font-semibold tracking-wide text-muted uppercase">{children}</h2>
+    <div className="mb-3 flex items-center justify-between gap-3">
+      <h2 className="eyebrow flex items-center gap-2 text-muted">
+        <span aria-hidden className="h-3.5 w-0.5 rounded-full bg-accent" />
+        {children}
+      </h2>
       {action}
     </div>
   );
 }
 
-export function Field({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: ReactNode;
-  children: ReactNode;
-}) {
+export function Field({ label, hint, children }: { label: string; hint?: ReactNode; children: ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-muted">{label}</span>
+      <span className="eyebrow mb-2 block text-muted">{label}</span>
       {children}
-      {hint ? <span className="mt-1.5 block text-xs text-muted">{hint}</span> : null}
+      {hint ? <span className="mt-2 block text-xs leading-snug text-muted">{hint}</span> : null}
     </label>
   );
 }
 
 const INPUT_CLASS =
-  "w-full min-h-11 rounded-xl border border-line bg-raised px-3.5 text-base text-ink " +
-  "placeholder:text-muted/60 focus:border-accent focus:outline-none";
+  "w-full min-h-12 rounded-lg bg-raised px-3.5 text-base font-medium text-ink " +
+  "placeholder:font-normal placeholder:text-muted/60 outline-2 outline-transparent " +
+  "focus:outline-accent";
 
 export function Input({ className = "", ...props }: ComponentProps<"input">) {
   return <input className={`${INPUT_CLASS} ${className}`} {...props} />;
@@ -93,7 +92,7 @@ export function ChoiceGroup<T extends string | number>({
 }) {
   return (
     <div
-      className="grid gap-2"
+      className="grid gap-1.5"
       style={{ gridTemplateColumns: `repeat(${columns ?? options.length}, minmax(0, 1fr))` }}
     >
       {options.map((option) => {
@@ -104,15 +103,15 @@ export function ChoiceGroup<T extends string | number>({
             type="button"
             aria-pressed={selected}
             onClick={() => onChange(option.value)}
-            className={`min-h-11 rounded-xl border px-2 py-2 text-sm font-semibold transition-colors ${
-              selected
-                ? "border-accent bg-accent/15 text-accent"
-                : "border-line bg-raised text-muted hover:text-ink"
+            className={`min-h-12 rounded-lg px-2 py-2 text-sm font-bold transition-colors ${
+              selected ? "bg-accent text-accent-ink" : "bg-raised text-muted hover:text-ink"
             }`}
           >
             <span className="block">{option.label}</span>
             {option.sublabel ? (
-              <span className="mt-0.5 block text-[0.7rem] font-normal opacity-70">{option.sublabel}</span>
+              <span className="mt-0.5 block text-[0.65rem] font-semibold tracking-wide uppercase opacity-70">
+                {option.sublabel}
+              </span>
             ) : null}
           </button>
         );
@@ -122,47 +121,40 @@ export function ChoiceGroup<T extends string | number>({
 }
 
 export function EmptyState({
-  icon,
   title,
   children,
   action,
 }: {
-  icon?: ReactNode;
   title: string;
   children?: ReactNode;
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-dashed border-line px-6 py-10 text-center">
-      {icon ? <div className="mb-3 text-3xl" aria-hidden>{icon}</div> : null}
-      <p className="font-semibold text-ink">{title}</p>
-      {children ? <p className="mx-auto mt-1.5 max-w-xs text-sm text-muted">{children}</p> : null}
-      {action ? <div className="mt-5 flex justify-center">{action}</div> : null}
+    <div className="rounded-xl border border-dashed border-line px-6 py-10 text-center">
+      <p className="text-base font-bold tracking-tight text-ink">{title}</p>
+      {children ? <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-muted">{children}</p> : null}
+      {action ? <div className="mt-6 flex justify-center">{action}</div> : null}
     </div>
   );
 }
 
 export function Badge({ children, tone = "muted" }: { children: ReactNode; tone?: "muted" | "accent" }) {
   const tones = {
-    muted: "border-line bg-raised text-muted",
-    accent: "border-accent/40 bg-accent/15 text-accent",
+    muted: "bg-raised text-muted",
+    accent: "bg-accent/20 text-accent",
   };
-  return (
-    <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${tones[tone]}`}>
-      {children}
-    </span>
-  );
+  return <span className={`eyebrow rounded px-2 py-1 ${tones[tone]}`}>{children}</span>;
 }
 
 export function PageTitle({ title, subtitle }: { title: string; subtitle?: ReactNode }) {
   return (
-    <header className="mb-6">
-      <h1 className="text-2xl font-bold tracking-tight text-ink">{title}</h1>
-      {subtitle ? <p className="mt-1 text-sm text-muted">{subtitle}</p> : null}
+    <header className="mb-7">
+      <h1 className="text-3xl font-black tracking-tighter text-ink">{title}</h1>
+      {subtitle ? <p className="mt-1.5 text-sm text-muted">{subtitle}</p> : null}
     </header>
   );
 }
 
-export function Loading({ label = "Loading…" }: { label?: string }) {
-  return <p className="py-12 text-center text-sm text-muted">{label}</p>;
+export function Loading({ label }: { label: string }) {
+  return <p className="eyebrow py-16 text-center text-muted">{label}</p>;
 }

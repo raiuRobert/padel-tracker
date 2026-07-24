@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { BottomNav } from "@/components/BottomNav";
+import { LanguageToggle } from "@/components/LanguageToggle";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
+import { I18nProvider } from "@/i18n";
 import { DataProvider } from "./providers";
 import "./globals.css";
 
@@ -20,9 +22,9 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b0f14",
-  // The app is used one-handed on a court; accidental pinch-zoom while tapping scores is a nuisance,
-  // but zoom stays available because disabling it outright is an accessibility problem.
+  themeColor: "#07090c",
+  // The app is used one-handed on a court; accidental pinch-zoom while tapping is a nuisance, but
+  // zoom stays available because disabling it outright is an accessibility problem.
   initialScale: 1,
   width: "device-width",
   viewportFit: "cover",
@@ -32,11 +34,18 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full">
-        <DataProvider>
-          <main className="mx-auto w-full max-w-lg px-4 pt-6 pb-4">{children}</main>
-          <BottomNav />
-          <ServiceWorkerRegistration />
-        </DataProvider>
+        <I18nProvider>
+          <DataProvider>
+            <div className="mx-auto w-full max-w-lg px-4">
+              <div className="flex justify-end pt-3">
+                <LanguageToggle />
+              </div>
+              <main className="pt-3 pb-4">{children}</main>
+            </div>
+            <BottomNav />
+            <ServiceWorkerRegistration />
+          </DataProvider>
+        </I18nProvider>
       </body>
     </html>
   );

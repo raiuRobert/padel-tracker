@@ -1,70 +1,76 @@
 "use client";
 
 import { useState } from "react";
+import { useI18n } from "@/i18n";
 import type { SessionRound } from "@/lib/domain";
 import { formatPair } from "@/lib/format";
-import type { Match } from "@/lib/rotation/types";
+import type { Match, Side } from "@/lib/rotation/types";
 import type { MatchResult } from "@/lib/standings";
 import { Button, Card } from "./ui";
 
 /**
- * A round, with score entry. Built for tapping while standing on a court: every target is a large
- * button, entering a score is two taps, and nothing depends on hovering or dragging.
+ * A round, with score entry.
+ *
+ * A game is won outright by one team, so entering a result is a single tap on the team that won —
+ * one tap per court, then save. No numbers to dial in between points.
  */
 
-type Scores = Record<number, { a?: number; b?: number }>;
+type Winners = Record<number, Side | undefined>;
 
-function initialScores(round: SessionRound): Scores {
-  const scores: Scores = {};
+function initialWinners(round: SessionRound): Winners {
+  const winners: Winners = {};
   for (const match of round.matches) {
-    const result = round.results.find((r) => r.court === match.court);
-    scores[match.court] = { a: result?.teamAGames, b: result?.teamBGames };
+    winners[match.court] = round.results.find((r) => r.court === match.court)?.winner;
   }
-  return scores;
+  return winners;
 }
 
-function TeamLine({ names, side }: { names: readonly string[]; side: "a" | "b" }) {
-  return (
-    <span className={`font-semibold ${side === "a" ? "text-team-a" : "text-team-b"}`}>
-      {formatPair(names)}
-    </span>
-  );
-}
+const SIDE_STYLES: Record<Side, { idle: string; won: string; text: string }> = {
+  A: {
+    idle: "bg-raised text-team-a hover:bg-team-a/15",
+    won: "bg-team-a text-canvas",
+    text: "text-team-a",
+  },
+  B: {
+    idle: "bg-raised text-team-b hover:bg-team-b/15",
+    won: "bg-team-b text-canvas",
+    text: "text-team-b",
+  },
+};
 
-/** Row of tappable game counts. Two taps — one per team — records a whole rotation. */
-function ScorePicker({
-  max,
-  value,
-  onChange,
+/** One big tap target per team. Tapping it declares that team the winner of the game. */
+function TeamButton({
+  names,
   side,
-  label,
+  won,
+  onPick,
 }: {
-  max: number;
-  value: number | undefined;
-  onChange: (value: number) => void;
-  side: "a" | "b";
-  label: string;
+  names: readonly string[];
+  side: Side;
+  won: boolean;
+  onPick: () => void;
 }) {
-  const tone = side === "a" ? "border-team-a bg-team-a/20 text-team-a" : "border-team-b bg-team-b/20 text-team-b";
+  const { t } = useI18n();
+  const label = formatPair(names);
+  const styles = SIDE_STYLES[side];
+
   return (
-    <div className="flex flex-wrap gap-1.5" role="group" aria-label={label}>
-      {Array.from({ length: max + 1 }, (_, games) => {
-        const selected = value === games;
-        return (
-          <button
-            key={games}
-            type="button"
-            aria-pressed={selected}
-            onClick={() => onChange(games)}
-            className={`h-11 min-w-11 flex-1 rounded-lg border text-base font-bold transition-colors ${
-              selected ? tone : "border-line bg-raised text-muted"
-            }`}
-          >
-            {games}
-          </button>
-        );
-      })}
-    </div>
+    <button
+      type="button"
+      aria-pressed={won}
+      aria-label={t("play.winnerLabel", { team: label })}
+      onClick={onPick}
+      className={`flex min-h-16 w-full items-center justify-between gap-3 rounded-lg px-4 text-left
+                  font-bold transition-colors ${won ? styles.won : styles.idle}`}
+    >
+      <span className="text-base leading-tight tracking-tight">{label}</span>
+      <span
+        aria-hidden
+        className={`eyebrow shrink-0 rounded px-1.5 py-1 ${won ? "bg-canvas/25" : "opacity-0"}`}
+      >
+        {t("play.won")}
+      </span>
+    </button>
   );
 }
 
@@ -79,16 +85,23 @@ export function MatchSummary({
   nameOf: (id: string) => string;
   courts: number;
 }) {
+  const line = (side: Side, players: readonly string[]) => (
+    <span
+      className={`truncate ${SIDE_STYLES[side].text} ${
+        result ? (result.winner === side ? "font-bold" : "font-medium opacity-45") : "font-medium"
+      }`}
+    >
+      {formatPair(players.map(nameOf))}
+    </span>
+  );
+
   return (
-    <div className="flex items-center justify-between gap-3 py-1.5 text-sm">
-      <span className="min-w-0 truncate">
-        {courts > 1 ? <span className="mr-2 text-xs text-muted">C{match.court}</span> : null}
-        <TeamLine names={match.teamA.map(nameOf)} side="a" />
-        <span className="mx-1.5 text-muted">v</span>
-        <TeamLine names={match.teamB.map(nameOf)} side="b" />
-      </span>
-      <span className="shrink-0 font-mono font-bold tabular-nums">
-        {result ? `${result.teamAGames}–${result.teamBGames}` : "–"}
+    <div className="flex items-center gap-2 py-1.5 text-sm">
+      {courts > 1 ? <span className="eyebrow w-6 shrink-0 text-muted">C{match.court}</span> : null}
+      <span className="flex min-w-0 flex-1 items-center gap-2">
+        {line("A", match.teamA)}
+        <span className="shrink-0 text-xs text-muted">v</span>
+        {line("B", match.teamB)}
       </span>
     </div>
   );
@@ -96,41 +109,28 @@ export function MatchSummary({
 
 export function RoundBoard({
   round,
-  gamesToWin,
   courts,
   nameOf,
   onSave,
-  saveLabel = "Save round",
+  saveLabel,
 }: {
   round: SessionRound;
-  gamesToWin: number;
   courts: number;
   nameOf: (id: string) => string;
   onSave: (results: MatchResult[]) => Promise<void> | void;
   saveLabel?: string;
 }) {
-  const [scores, setScores] = useState<Scores>(() => initialScores(round));
+  const { t } = useI18n();
+  const [winners, setWinners] = useState<Winners>(() => initialWinners(round));
   const [saving, setSaving] = useState(false);
 
-  const complete = round.matches.every((match) => {
-    const score = scores[match.court];
-    return score?.a !== undefined && score?.b !== undefined;
-  });
-
-  const set = (court: number, side: "a" | "b", games: number) =>
-    setScores((current) => ({ ...current, [court]: { ...current[court], [side]: games } }));
+  const complete = round.matches.every((match) => winners[match.court] !== undefined);
 
   async function save() {
     if (!complete) return;
     setSaving(true);
     try {
-      await onSave(
-        round.matches.map((match) => ({
-          court: match.court,
-          teamAGames: scores[match.court].a!,
-          teamBGames: scores[match.court].b!,
-        })),
-      );
+      await onSave(round.matches.map((match) => ({ court: match.court, winner: winners[match.court]! })));
     } finally {
       setSaving(false);
     }
@@ -139,48 +139,40 @@ export function RoundBoard({
   return (
     <Card className="p-4">
       {round.sittingOut.length > 0 ? (
-        <p className="mb-4 rounded-lg bg-raised px-3 py-2 text-sm text-muted">
-          <span className="font-semibold text-ink">Sitting out:</span>{" "}
-          {round.sittingOut.map(nameOf).join(", ")}
+        <p className="mb-4 rounded-lg bg-raised px-3 py-2.5 text-sm">
+          <span className="eyebrow mr-2 text-muted">{t("play.sittingOut")}</span>
+          <span className="font-semibold">{round.sittingOut.map(nameOf).join(", ")}</span>
         </p>
       ) : null}
+
+      <p className="eyebrow mb-3 text-muted">{t("play.tapWinner")}</p>
 
       <div className="space-y-5">
         {round.matches.map((match) => (
           <div key={match.court}>
             {courts > 1 ? (
-              <p className="mb-2 text-xs font-semibold tracking-wide text-muted uppercase">
-                Court {match.court}
-              </p>
+              <p className="eyebrow mb-2 text-muted">{t("play.court", { number: match.court })}</p>
             ) : null}
-
-            <div className="mb-2 flex items-center justify-between gap-2 text-base">
-              <TeamLine names={match.teamA.map(nameOf)} side="a" />
+            <div className="space-y-1.5">
+              <TeamButton
+                names={match.teamA.map(nameOf)}
+                side="A"
+                won={winners[match.court] === "A"}
+                onPick={() => setWinners((current) => ({ ...current, [match.court]: "A" }))}
+              />
+              <TeamButton
+                names={match.teamB.map(nameOf)}
+                side="B"
+                won={winners[match.court] === "B"}
+                onPick={() => setWinners((current) => ({ ...current, [match.court]: "B" }))}
+              />
             </div>
-            <ScorePicker
-              max={gamesToWin}
-              value={scores[match.court]?.a}
-              onChange={(games) => set(match.court, "a", games)}
-              side="a"
-              label={`Games for ${formatPair(match.teamA.map(nameOf))}`}
-            />
-
-            <div className="my-2 flex items-center justify-between gap-2 text-base">
-              <TeamLine names={match.teamB.map(nameOf)} side="b" />
-            </div>
-            <ScorePicker
-              max={gamesToWin}
-              value={scores[match.court]?.b}
-              onChange={(games) => set(match.court, "b", games)}
-              side="b"
-              label={`Games for ${formatPair(match.teamB.map(nameOf))}`}
-            />
           </div>
         ))}
       </div>
 
       <Button className="mt-5 w-full" disabled={!complete || saving} onClick={() => void save()}>
-        {saving ? "Saving…" : saveLabel}
+        {saving ? t("common.saving") : (saveLabel ?? t("play.saveRound"))}
       </Button>
     </Card>
   );

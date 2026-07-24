@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { newId } from "@/data/ids";
+import { useI18n } from "@/i18n";
 import { toCents, type Extra } from "@/lib/cost";
 import { CURRENCY } from "@/lib/format";
 import { Button, Card, Field, Input, SectionTitle } from "./ui";
@@ -21,6 +22,7 @@ export function ExtraForm({
   onAdd: (extra: Extra) => Promise<void> | void;
   onCancel: () => void;
 }) {
+  const { t } = useI18n();
   const [description, setDescription] = useState("");
   const [cost, setCost] = useState("");
   const [billedTo, setBilledTo] = useState<string[]>([]);
@@ -48,18 +50,18 @@ export function ExtraForm({
 
   return (
     <Card className="space-y-4 p-4">
-      <SectionTitle>Add an extra</SectionTitle>
+      <SectionTitle>{t("extra.title")}</SectionTitle>
 
       <div className="grid grid-cols-[1fr_7rem] gap-3">
-        <Field label="What was it?">
+        <Field label={t("extra.what")}>
           <Input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Beer, water, balls…"
+            placeholder={t("extra.whatPlaceholder")}
             autoFocus
           />
         </Field>
-        <Field label="Cost">
+        <Field label={t("extra.cost")}>
           <Input
             type="number"
             inputMode="decimal"
@@ -72,8 +74,8 @@ export function ExtraForm({
         </Field>
       </div>
 
-      <Field label="Billed to" hint="Split evenly between whoever you pick — not the whole session.">
-        <ul className="grid grid-cols-2 gap-2">
+      <Field label={t("extra.billedTo")} hint={t("extra.billedHint")}>
+        <ul className="grid grid-cols-2 gap-1.5">
           {playerIds.map((id) => {
             const selected = billedTo.includes(id);
             return (
@@ -82,8 +84,8 @@ export function ExtraForm({
                   type="button"
                   aria-pressed={selected}
                   onClick={() => toggle(id)}
-                  className={`min-h-11 w-full truncate rounded-xl border px-3 text-sm font-semibold transition-colors ${
-                    selected ? "border-accent bg-accent/15 text-accent" : "border-line bg-raised text-ink"
+                  className={`min-h-12 w-full truncate rounded-lg px-3 text-sm font-bold transition-colors ${
+                    selected ? "bg-accent text-accent-ink" : "bg-raised text-ink"
                   }`}
                 >
                   {nameOf(id)}
@@ -96,10 +98,10 @@ export function ExtraForm({
 
       <div className="flex gap-2">
         <Button variant="secondary" className="flex-1" onClick={onCancel}>
-          Cancel
+          {t("common.cancel")}
         </Button>
         <Button className="flex-1" disabled={!valid || saving} onClick={() => void submit()}>
-          {saving ? "Adding…" : "Add"}
+          {saving ? t("extra.adding") : t("common.add")}
         </Button>
       </div>
     </Card>

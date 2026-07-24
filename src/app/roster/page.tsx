@@ -3,17 +3,18 @@
 import { useState, type FormEvent } from "react";
 import { PlayerPicker } from "@/components/PlayerPicker";
 import { Badge, Button, Card, EmptyState, Input, Loading, PageTitle, SectionTitle } from "@/components/ui";
+import { useI18n } from "@/i18n";
 import type { Group } from "@/lib/domain";
-import { pluralise } from "@/lib/format";
 import { useData } from "../providers";
 
 export default function RosterPage() {
   const { ready, players, activePlayers, addPlayer, renamePlayer, removePlayer } = useData();
+  const { t, n } = useI18n();
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
 
-  if (!ready) return <Loading />;
+  if (!ready) return <Loading label={t("common.loading")} />;
 
   async function submitPlayer(event: FormEvent) {
     event.preventDefault();
@@ -29,52 +30,40 @@ export default function RosterPage() {
     setEditingId(null);
   }
 
-  async function confirmRemove(id: string, name: string) {
-    const message =
-      `Remove ${name} from the roster and any saved groups?\n\n` +
-      `If they've played a session they're kept as archived, so past results still show their name.`;
-    if (window.confirm(message)) await removePlayer(id);
-  }
-
   return (
     <>
-      <PageTitle
-        title="Roster"
-        subtitle="Everyone who plays, plus the groups you start sessions from."
-      />
+      <PageTitle title={t("roster.title")} subtitle={t("roster.subtitle")} />
 
-      <section className="mb-8">
-        <SectionTitle action={<span className="text-xs text-muted">{pluralise(activePlayers.length, "player")}</span>}>
-          Players
+      <section className="mb-9">
+        <SectionTitle action={<span className="text-xs text-muted">{n("player", activePlayers.length)}</span>}>
+          {t("roster.players")}
         </SectionTitle>
 
-        <form onSubmit={submitPlayer} className="mb-3 flex gap-2">
+        <form onSubmit={submitPlayer} className="mb-2 flex gap-2">
           <Input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder="Add a player"
-            aria-label="New player name"
+            placeholder={t("roster.addPlaceholder")}
+            aria-label={t("roster.newPlayerLabel")}
             autoComplete="off"
           />
           <Button type="submit" disabled={!newName.trim()} className="shrink-0 px-5">
-            Add
+            {t("common.add")}
           </Button>
         </form>
 
         {players.length === 0 ? (
-          <EmptyState icon="👋" title="No players yet">
-            Add everyone who plays regularly. You only have to do this once.
-          </EmptyState>
+          <EmptyState title={t("roster.noPlayersTitle")}>{t("roster.noPlayersBody")}</EmptyState>
         ) : (
-          <Card className="divide-y divide-line">
+          <div className="space-y-1">
             {players.map((player) => (
-              <div key={player.id} className="flex items-center gap-2 p-3">
+              <Card key={player.id} className="flex items-center gap-2 p-2.5">
                 {editingId === player.id ? (
                   <>
                     <Input
                       value={editingName}
                       onChange={(e) => setEditingName(e.target.value)}
-                      aria-label={`Rename ${player.name}`}
+                      aria-label={t("roster.renameLabel", { name: player.name })}
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === "Enter") void saveRename(player.id);
@@ -82,44 +71,48 @@ export default function RosterPage() {
                       }}
                     />
                     <Button variant="secondary" onClick={() => void saveRename(player.id)} className="shrink-0">
-                      Save
+                      {t("common.save")}
                     </Button>
                   </>
                 ) : (
                   <>
-                    <span className="flex-1 truncate font-medium">
+                    <span className="flex-1 truncate pl-1.5 font-bold tracking-tight">
                       {player.name}
                       {player.archived ? (
                         <span className="ml-2 align-middle">
-                          <Badge>archived</Badge>
+                          <Badge>{t("roster.archived")}</Badge>
                         </span>
                       ) : null}
                     </span>
                     <Button
                       variant="ghost"
-                      className="px-3"
+                      className="h-10 min-h-10 px-3 text-xs"
                       onClick={() => {
                         setEditingId(player.id);
                         setEditingName(player.name);
                       }}
                     >
-                      Rename
+                      {t("roster.rename")}
                     </Button>
                     {player.archived ? null : (
                       <Button
                         variant="danger"
-                        className="px-3"
-                        onClick={() => void confirmRemove(player.id, player.name)}
-                        aria-label={`Remove ${player.name}`}
+                        className="h-10 min-h-10 px-3 text-xs"
+                        aria-label={t("roster.removeLabel", { name: player.name })}
+                        onClick={() => {
+                          if (window.confirm(t("roster.confirmRemovePlayer", { name: player.name }))) {
+                            void removePlayer(player.id);
+                          }
+                        }}
                       >
-                        Remove
+                        {t("common.remove")}
                       </Button>
                     )}
                   </>
                 )}
-              </div>
+              </Card>
             ))}
-          </Card>
+          </div>
         )}
       </section>
 
@@ -130,6 +123,7 @@ export default function RosterPage() {
 
 function GroupsSection() {
   const { activePlayers, groups, addGroup, updateGroup, removeGroup, playerName } = useData();
+  const { t } = useI18n();
   const [editing, setEditing] = useState<Group | "new" | null>(null);
 
   if (editing) {
@@ -152,48 +146,50 @@ function GroupsSection() {
         action={
           <Button
             variant="ghost"
-            className="px-3 text-sm"
+            className="h-9 min-h-9 px-3 text-xs"
             disabled={activePlayers.length === 0}
             onClick={() => setEditing("new")}
           >
-            + New group
+            {t("roster.newGroup")}
           </Button>
         }
       >
-        Groups
+        {t("roster.groups")}
       </SectionTitle>
 
       {groups.length === 0 ? (
-        <EmptyState icon="🗂️" title="No groups saved">
-          Save the people you usually play with so starting a session is two taps instead of eight.
-        </EmptyState>
+        <EmptyState title={t("roster.noGroupsTitle")}>{t("roster.noGroupsBody")}</EmptyState>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-1">
           {groups.map((group) => (
             <Card key={group.id} className="p-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="font-semibold">{group.name}</p>
-                  <p className="mt-0.5 truncate text-sm text-muted">
+                  <p className="font-bold tracking-tight">{group.name}</p>
+                  <p className="mt-1 truncate text-sm text-muted">
                     {group.playerIds.length === 0
-                      ? "No players yet"
+                      ? t("roster.groupEmpty")
                       : group.playerIds.map(playerName).join(", ")}
                   </p>
                 </div>
                 <div className="flex shrink-0">
-                  <Button variant="ghost" className="px-3" onClick={() => setEditing(group)}>
-                    Edit
+                  <Button
+                    variant="ghost"
+                    className="h-10 min-h-10 px-3 text-xs"
+                    onClick={() => setEditing(group)}
+                  >
+                    {t("common.edit")}
                   </Button>
                   <Button
                     variant="danger"
-                    className="px-3"
+                    className="h-10 min-h-10 px-3 text-xs"
                     onClick={() => {
-                      if (window.confirm(`Delete the group "${group.name}"? Players are kept.`)) {
+                      if (window.confirm(t("roster.confirmDeleteGroup", { name: group.name }))) {
                         void removeGroup(group.id);
                       }
                     }}
                   >
-                    Delete
+                    {t("common.delete")}
                   </Button>
                 </div>
               </div>
@@ -215,6 +211,7 @@ function GroupEditor({
   onCancel: () => void;
 }) {
   const { activePlayers } = useData();
+  const { t } = useI18n();
   const [name, setName] = useState(group?.name ?? "");
   const [selected, setSelected] = useState<string[]>([...(group?.playerIds ?? [])]);
 
@@ -223,26 +220,22 @@ function GroupEditor({
 
   return (
     <section>
-      <SectionTitle>{group ? "Edit group" : "New group"}</SectionTitle>
+      <SectionTitle>{group ? t("roster.editGroup") : t("roster.newGroup")}</SectionTitle>
       <Card className="space-y-4 p-4">
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Group name, e.g. Tuesday regulars"
-          aria-label="Group name"
+          placeholder={t("roster.groupNamePlaceholder")}
+          aria-label={t("roster.groupNameLabel")}
           autoFocus
         />
         <PlayerPicker players={activePlayers} selected={selected} onToggle={toggle} />
         <div className="flex gap-2">
           <Button variant="secondary" onClick={onCancel} className="flex-1">
-            Cancel
+            {t("common.cancel")}
           </Button>
-          <Button
-            disabled={!name.trim()}
-            onClick={() => void onSave(name.trim(), selected)}
-            className="flex-1"
-          >
-            Save
+          <Button disabled={!name.trim()} onClick={() => void onSave(name.trim(), selected)} className="flex-1">
+            {t("common.save")}
           </Button>
         </div>
       </Card>

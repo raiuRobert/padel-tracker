@@ -5,18 +5,30 @@ import { useEffect, useRef, useState } from "react";
 import { ExtraForm } from "@/components/ExtraForm";
 import { MatchSummary, RoundBoard } from "@/components/RoundBoard";
 import { Button, Card, EmptyState, SectionTitle } from "@/components/ui";
+import { useI18n } from "@/i18n";
 import type { Extra } from "@/lib/cost";
 import type { Session, SessionRound } from "@/lib/domain";
-import { suggestedRoundCount } from "@/lib/domain";
-import { pluralise } from "@/lib/format";
+import { plannedRoundCount } from "@/lib/domain";
 import { generateAmericanoSchedule } from "@/lib/rotation";
-import { buildNextRound, currentRound, isRoundScored } from "@/lib/session";
+import { buildNextRound, currentRound, isRoundScored, startsWithCourtSwap } from "@/lib/session";
 import type { MatchResult } from "@/lib/standings";
 import { useData } from "../../providers";
+
+/** Called out because it's the one moment in the session where people physically move courts. */
+function CourtSwapNotice() {
+  const { t } = useI18n();
+  return (
+    <div className="mb-2 rounded-lg bg-accent/15 px-3 py-2.5">
+      <p className="eyebrow text-accent">{t("play.courtSwap")}</p>
+      <p className="mt-1 text-xs text-muted">{t("play.courtSwapHint")}</p>
+    </div>
+  );
+}
 
 export default function SessionPlayPage() {
   const { id } = useParams<{ id: string }>();
   const { sessions, playerName, patchSession } = useData();
+  const { t, n } = useI18n();
   const [addingExtra, setAddingExtra] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const ensured = useRef<string | null>(null);
@@ -40,7 +52,7 @@ export default function SessionPlayPage() {
         ? generateAmericanoSchedule({
             players: session.playerIds,
             courts: session.courts,
-            rounds: suggestedRoundCount(session.hours),
+            rounds: plannedRoundCount(session.playerIds.length, session.hours),
           }).map<SessionRound>((round) => ({ ...round, results: [] }))
         : [...session.rounds, buildNextRound(session)];
 
@@ -75,7 +87,7 @@ export default function SessionPlayPage() {
   return (
     <>
       {addingExtra ? (
-        <div className="mb-6">
+        <div className="mb-7">
           <ExtraForm
             playerIds={session.playerIds}
             nameOf={playerName}
@@ -86,71 +98,66 @@ export default function SessionPlayPage() {
       ) : null}
 
       {playing ? (
-        <section className="mb-8">
+        <section className="mb-9">
           <SectionTitle
             action={
-              <Button
-                variant="ghost"
-                className="h-9 min-h-9 px-3 text-sm"
-                onClick={() => setAddingExtra(true)}
-              >
-                + Extra
+              <Button variant="ghost" className="h-9 min-h-9 px-3 text-xs" onClick={() => setAddingExtra(true)}>
+                {t("play.extra")}
               </Button>
             }
           >
-            Round {playing.index + 1}
+            {t("play.round", { number: playing.index + 1 })}
           </SectionTitle>
+          {startsWithCourtSwap(session, playing.index) ? <CourtSwapNotice /> : null}
           <RoundBoard
             key={playing.index}
             round={playing}
-            gamesToWin={session.gamesToWin}
             courts={session.courts}
             nameOf={playerName}
             onSave={(results) => saveScore(playing, results)}
           />
         </section>
       ) : session.status === "finished" ? (
-        <section className="mb-8">
-          <EmptyState icon="✅" title="Session finished">
-            {pluralise(played.length, "round")} played. The standings and cost split are final.
+        <section className="mb-9">
+          <EmptyState title={t("play.finishedTitle")}>
+            {t("play.finishedBody", { rounds: n("round", played.length) })}
           </EmptyState>
         </section>
       ) : null}
 
       {played.length > 0 ? (
-        <section className="mb-8">
-          <SectionTitle>Played</SectionTitle>
-          <div className="space-y-2">
+        <section className="mb-9">
+          <SectionTitle>{t("play.played")}</SectionTitle>
+          <div className="space-y-1">
             {[...played].reverse().map((round) =>
               editingIndex === round.index ? (
                 <div key={round.index}>
-                  <p className="mb-2 text-xs font-semibold tracking-wide text-muted uppercase">
-                    Editing round {round.index + 1}
+                  <p className="eyebrow mb-2 text-muted">
+                    {t("play.editingRound", { number: round.index + 1 })}
                   </p>
                   <RoundBoard
                     round={round}
-                    gamesToWin={session.gamesToWin}
                     courts={session.courts}
                     nameOf={playerName}
                     onSave={(results) => saveScore(round, results)}
-                    saveLabel="Update score"
+                    saveLabel={t("play.updateRound")}
                   />
                   <Button variant="ghost" className="mt-2 w-full" onClick={() => setEditingIndex(null)}>
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                 </div>
               ) : (
                 <Card key={round.index} className="p-4">
-                  <div className="mb-1 flex items-center justify-between">
-                    <span className="text-xs font-semibold tracking-wide text-muted uppercase">
-                      Round {round.index + 1}
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <span className="eyebrow text-muted">
+                      {t("play.round", { number: round.index + 1 })}
                     </span>
                     <button
                       type="button"
                       onClick={() => setEditingIndex(round.index)}
-                      className="text-sm font-semibold text-muted hover:text-ink"
+                      className="eyebrow text-muted hover:text-ink"
                     >
-                      Edit
+                      {t("common.edit")}
                     </button>
                   </div>
                   {round.matches.map((match) => (
@@ -163,8 +170,8 @@ export default function SessionPlayPage() {
                     />
                   ))}
                   {round.sittingOut.length > 0 ? (
-                    <p className="mt-1.5 text-xs text-muted">
-                      Sat out: {round.sittingOut.map(playerName).join(", ")}
+                    <p className="mt-2 text-xs text-muted">
+                      {t("play.satOut", { names: round.sittingOut.map(playerName).join(", ") })}
                     </p>
                   ) : null}
                 </Card>
@@ -175,14 +182,17 @@ export default function SessionPlayPage() {
       ) : null}
 
       {upcoming.length > 0 ? (
-        <section className="mb-8">
-          <SectionTitle>Coming up</SectionTitle>
+        <section className="mb-9">
+          <SectionTitle>{t("play.comingUp")}</SectionTitle>
           <Card className="divide-y divide-line p-4">
             {upcoming.map((round) => (
-              <div key={round.index} className="py-2 first:pt-0 last:pb-0">
-                <span className="text-xs font-semibold tracking-wide text-muted uppercase">
-                  Round {round.index + 1}
-                </span>
+              <div key={round.index} className="py-2.5 first:pt-0 last:pb-0">
+                <div className="flex items-center gap-2">
+                  <span className="eyebrow text-muted">{t("play.round", { number: round.index + 1 })}</span>
+                  {startsWithCourtSwap(session, round.index) ? (
+                    <span className="eyebrow text-accent">↔</span>
+                  ) : null}
+                </div>
                 {round.matches.map((match) => (
                   <MatchSummary key={match.court} match={match} nameOf={playerName} courts={session.courts} />
                 ))}
@@ -192,17 +202,15 @@ export default function SessionPlayPage() {
         </section>
       ) : null}
 
-      <div className="space-y-2">
-        {session.status === "active" ? (
-          <Button variant="secondary" className="w-full" onClick={() => void setStatus("finished")}>
-            Finish session
-          </Button>
-        ) : (
-          <Button variant="secondary" className="w-full" onClick={() => void setStatus("active")}>
-            Reopen session
-          </Button>
-        )}
-      </div>
+      {session.status === "active" ? (
+        <Button variant="secondary" className="w-full" onClick={() => void setStatus("finished")}>
+          {t("play.finishSession")}
+        </Button>
+      ) : (
+        <Button variant="secondary" className="w-full" onClick={() => void setStatus("active")}>
+          {t("play.reopenSession")}
+        </Button>
+      )}
     </>
   );
 }

@@ -2,103 +2,96 @@
 
 import Link from "next/link";
 import { Badge, ButtonLink, Card, EmptyState, Loading, PageTitle, SectionTitle } from "@/components/ui";
-import { formatDate, formatMoney, pluralise } from "@/lib/format";
+import { useI18n } from "@/i18n";
+import { formatMoney } from "@/lib/format";
 import { scoredRoundCount, sessionCostSplit } from "@/lib/session";
 import { useData } from "./providers";
 
 export default function HomePage() {
   const { ready, sessions, activePlayers } = useData();
+  const { t, n, formatDate } = useI18n();
 
-  if (!ready) return <Loading />;
+  if (!ready) return <Loading label={t("common.loading")} />;
 
   const active = sessions.find((session) => session.status === "active");
   const recent = sessions.filter((session) => session.status !== "active").slice(0, 3);
 
   return (
     <>
-      <PageTitle title="Padel Tracker" subtitle="Fair rotations, live scores, an honest split." />
+      <PageTitle title="Padel Tracker" subtitle={t("home.subtitle")} />
 
-      {active ? (
-        <section className="mb-8">
-          <SectionTitle>In progress</SectionTitle>
-          <Card className="p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-lg font-bold">{formatDate(active.date)}</p>
-                <p className="mt-0.5 text-sm text-muted">
-                  {pluralise(active.playerIds.length, "player")} · {pluralise(active.courts, "court")} ·{" "}
-                  <span className="capitalize">{active.mode}</span>
-                </p>
+      <section className="mb-8">
+        {active ? (
+          <>
+            <SectionTitle>{t("home.inProgress")}</SectionTitle>
+            <Card className="p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xl font-black tracking-tight">{formatDate(active.date)}</p>
+                  <p className="mt-1 text-sm text-muted">
+                    {n("player", active.playerIds.length)} · {n("court", active.courts)} ·{" "}
+                    <span className="capitalize">{active.mode}</span>
+                  </p>
+                </div>
+                <Badge tone="accent">
+                  {t("home.roundsIn", { count: n("round", scoredRoundCount(active)) })}
+                </Badge>
               </div>
-              <Badge tone="accent">{pluralise(scoredRoundCount(active), "round")} in</Badge>
-            </div>
-            <ButtonLink href={`/session/${active.id}`} className="mt-5 w-full">
-              Continue session
-            </ButtonLink>
-          </Card>
-        </section>
-      ) : (
-        <section className="mb-8">
-          {activePlayers.length < 4 ? (
-            <EmptyState
-              icon="🎾"
-              title="Add your players first"
-              action={<ButtonLink href="/roster">Go to roster</ButtonLink>}
-            >
-              You need at least four people on the roster before you can start a session.
-            </EmptyState>
-          ) : (
-            <Card className="p-5 text-center">
-              <p className="text-lg font-bold">Ready to play</p>
-              <p className="mx-auto mt-1 max-w-xs text-sm text-muted">
-                Pick who turned up, how many courts you have, and how you want to rotate.
-              </p>
-              <ButtonLink href="/session/new" className="mt-5 w-full">
-                Start a session
+              <ButtonLink href={`/session/${active.id}`} className="mt-5 w-full">
+                {t("home.continue")}
               </ButtonLink>
             </Card>
-          )}
-        </section>
-      )}
+          </>
+        ) : activePlayers.length < 4 ? (
+          <EmptyState
+            title={t("home.needPlayersTitle")}
+            action={<ButtonLink href="/roster">{t("home.goToRoster")}</ButtonLink>}
+          >
+            {t("home.needPlayersBody")}
+          </EmptyState>
+        ) : (
+          <Card className="p-6 text-center">
+            <p className="text-xl font-black tracking-tight">{t("home.readyTitle")}</p>
+            <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-muted">{t("home.readyBody")}</p>
+            <ButtonLink href="/session/new" className="mt-6 w-full">
+              {t("home.start")}
+            </ButtonLink>
+          </Card>
+        )}
+      </section>
 
       <section>
         <SectionTitle
           action={
             sessions.length > 0 ? (
-              <Link href="/history" className="text-sm font-semibold text-muted hover:text-ink">
-                See all
+              <Link href="/history" className="eyebrow text-muted hover:text-ink">
+                {t("home.seeAll")}
               </Link>
             ) : null
           }
         >
-          Recent sessions
+          {t("home.recent")}
         </SectionTitle>
 
         {recent.length === 0 ? (
-          <EmptyState icon="📋" title="No finished sessions yet">
-            Once you wrap up a session it shows here, with the final standings and who owes what.
-          </EmptyState>
+          <EmptyState title={t("home.noFinishedTitle")}>{t("home.noFinishedBody")}</EmptyState>
         ) : (
-          <div className="space-y-2">
-            {recent.map((session) => {
-              const split = sessionCostSplit(session);
-              return (
-                <Link key={session.id} href={`/session/${session.id}`} className="block">
-                  <Card className="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-raised">
-                    <div className="min-w-0">
-                      <p className="font-semibold">{formatDate(session.date)}</p>
-                      <p className="mt-0.5 text-sm text-muted">
-                        {pluralise(scoredRoundCount(session), "round")} ·{" "}
-                        {pluralise(session.playerIds.length, "player")}
-                      </p>
-                    </div>
-                    <span className="shrink-0 text-sm font-semibold text-muted">
-                      {formatMoney(split.grandTotalCents)}
-                    </span>
-                  </Card>
-                </Link>
-              );
-            })}
+          <div className="space-y-1">
+            {recent.map((session) => (
+              <Link key={session.id} href={`/session/${session.id}`} className="block">
+                <Card className="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-raised">
+                  <div className="min-w-0">
+                    <p className="font-bold tracking-tight">{formatDate(session.date)}</p>
+                    <p className="mt-0.5 text-sm text-muted">
+                      {n("round", scoredRoundCount(session))} · {n("player", session.playerIds.length)}
+                    </p>
+                  </div>
+                  <span className="score-figure shrink-0 text-sm text-muted">
+                    {formatMoney(sessionCostSplit(session).grandTotalCents)}
+                  </span>
+                </Card>
+              </Link>
+            ))}
           </div>
         )}
       </section>

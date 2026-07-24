@@ -1,9 +1,12 @@
+"use client";
+
+import { useI18n } from "@/i18n";
 import type { StandingsRow } from "@/lib/standings";
-import { Card } from "./ui";
 
 /**
- * Leaderboard as a list rather than a table — six numeric columns don't fit a phone, and games won
- * is the only figure anyone actually argues about. The rest is supporting detail.
+ * The leaderboard, read as a scoreboard: points are the loudest thing on the row and everything
+ * else is supporting detail. A list rather than a table, because five numeric columns don't fit a
+ * phone and only one of them ever gets argued about.
  */
 export function StandingsTable({
   rows,
@@ -12,35 +15,59 @@ export function StandingsTable({
   rows: readonly StandingsRow[];
   nameOf: (id: string) => string;
 }) {
+  const { t } = useI18n();
+  const leader = rows[0]?.points ?? 0;
+
   return (
-    <Card className="divide-y divide-line">
-      {rows.map((row, index) => (
-        <div key={row.playerId} className="flex items-center gap-3 p-3.5">
-          <span
-            className={`w-6 shrink-0 text-center text-sm font-bold tabular-nums ${
-              index === 0 ? "text-accent" : "text-muted"
-            }`}
+    <ol className="space-y-1">
+      {rows.map((row, index) => {
+        const first = index === 0 && row.points > 0;
+        return (
+          <li
+            key={row.playerId}
+            className={`flex items-center gap-3 rounded-lg px-3 py-3 ${first ? "bg-accent/10" : "bg-surface"}`}
           >
-            {index + 1}
-          </span>
+            <span
+              className={`score-figure w-5 shrink-0 text-center text-sm ${
+                first ? "text-accent" : "text-muted"
+              }`}
+            >
+              {index + 1}
+            </span>
 
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-semibold">{nameOf(row.playerId)}</p>
-            <p className="mt-0.5 text-xs text-muted tabular-nums">
-              {row.roundsPlayed} played · {row.matchesWon}W {row.matchesLost}L
-              {row.sitOuts > 0 ? ` · sat ${row.sitOuts}` : ""}
-            </p>
-          </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-base font-bold tracking-tight">{nameOf(row.playerId)}</p>
+              <p className="mt-1 text-xs text-muted tabular-nums">
+                {row.sitOuts > 0
+                  ? t("standings.recordWithSitOuts", {
+                      played: row.roundsPlayed,
+                      wins: row.points,
+                      losses: row.losses,
+                      sitOuts: row.sitOuts,
+                    })
+                  : t("standings.record", {
+                      played: row.roundsPlayed,
+                      wins: row.points,
+                      losses: row.losses,
+                    })}
+              </p>
+              {/* A bar makes the gap at the top of the table legible at a glance. */}
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-raised" aria-hidden>
+                <div
+                  className={`h-full rounded-full ${first ? "bg-accent" : "bg-muted/50"}`}
+                  style={{ width: leader > 0 ? `${(row.points / leader) * 100}%` : "0%" }}
+                />
+              </div>
+            </div>
 
-          <div className="shrink-0 text-right">
-            <p className="font-mono text-lg leading-none font-bold tabular-nums">{row.gamesWon}</p>
-            <p className="mt-1 text-xs text-muted tabular-nums">
-              {row.gameDifference > 0 ? "+" : ""}
-              {row.gameDifference}
-            </p>
-          </div>
-        </div>
-      ))}
-    </Card>
+            <span
+              className={`score-figure shrink-0 text-3xl ${first ? "text-accent" : "text-ink"}`}
+            >
+              {row.points}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
   );
 }

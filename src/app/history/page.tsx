@@ -2,21 +2,26 @@
 
 import Link from "next/link";
 import { Badge, Button, ButtonLink, Card, EmptyState, Loading, PageTitle } from "@/components/ui";
-import { formatDate, formatMoney, pluralise } from "@/lib/format";
+import { useI18n } from "@/i18n";
+import { formatMoney } from "@/lib/format";
 import { scoredRoundCount, sessionCostSplit } from "@/lib/session";
 import { useData } from "../providers";
 
 export default function HistoryPage() {
   const { ready, sessions, groups, removeSession } = useData();
+  const { t, n, formatDate } = useI18n();
 
-  if (!ready) return <Loading />;
+  if (!ready) return <Loading label={t("common.loading")} />;
 
   if (sessions.length === 0) {
     return (
       <>
-        <PageTitle title="History" />
-        <EmptyState icon="🗓️" title="No sessions yet" action={<ButtonLink href="/">Start a session</ButtonLink>}>
-          Every session you play is kept here, with its standings and cost split.
+        <PageTitle title={t("history.title")} />
+        <EmptyState
+          title={t("history.noSessionsTitle")}
+          action={<ButtonLink href="/">{t("history.startSession")}</ButtonLink>}
+        >
+          {t("history.noSessionsBody")}
         </EmptyState>
       </>
     );
@@ -24,34 +29,34 @@ export default function HistoryPage() {
 
   return (
     <>
-      <PageTitle title="History" subtitle={pluralise(sessions.length, "session")} />
+      <PageTitle title={t("history.title")} subtitle={n("session", sessions.length)} />
 
-      <div className="space-y-2">
+      <div className="space-y-1">
         {sessions.map((session) => {
-          const split = sessionCostSplit(session);
           const group = groups.find((g) => g.id === session.groupId);
+          const date = formatDate(session.date);
           return (
             <Card key={session.id} className="flex items-center gap-2 p-4">
               <Link href={`/session/${session.id}`} className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="truncate font-semibold">{formatDate(session.date)}</p>
-                  {session.status === "active" ? <Badge tone="accent">live</Badge> : null}
+                  <p className="truncate font-bold tracking-tight">{date}</p>
+                  {session.status === "active" ? <Badge tone="accent">{t("history.live")}</Badge> : null}
                 </div>
                 <p className="mt-0.5 truncate text-sm text-muted">
                   {group ? `${group.name} · ` : ""}
                   <span className="capitalize">{session.mode}</span> ·{" "}
-                  {pluralise(scoredRoundCount(session), "round")}
+                  {n("round", scoredRoundCount(session))}
                 </p>
               </Link>
-              <span className="shrink-0 font-mono text-sm font-semibold tabular-nums text-muted">
-                {formatMoney(split.grandTotalCents)}
+              <span className="score-figure shrink-0 text-sm text-muted">
+                {formatMoney(sessionCostSplit(session).grandTotalCents)}
               </span>
               <Button
                 variant="danger"
-                className="h-9 min-h-9 shrink-0 px-2 text-sm"
-                aria-label={`Delete session on ${formatDate(session.date)}`}
+                className="h-10 min-h-10 shrink-0 px-2"
+                aria-label={t("history.deleteLabel", { date })}
                 onClick={() => {
-                  if (window.confirm(`Delete the session on ${formatDate(session.date)}? This can't be undone.`)) {
+                  if (window.confirm(t("history.confirmDelete", { date }))) {
                     void removeSession(session.id);
                   }
                 }}

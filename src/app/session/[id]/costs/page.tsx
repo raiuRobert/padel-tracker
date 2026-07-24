@@ -4,14 +4,16 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { ExtraForm } from "@/components/ExtraForm";
 import { Button, Card, EmptyState, Field, Input, SectionTitle, Select } from "@/components/ui";
+import { useI18n } from "@/i18n";
 import { toCents, type Extra } from "@/lib/cost";
-import { centsToInput, CURRENCY, formatMoney, pluralise } from "@/lib/format";
+import { centsToInput, CURRENCY, formatMoney } from "@/lib/format";
 import { sessionCostSplit } from "@/lib/session";
 import { useData } from "../../../providers";
 
 export default function SessionCostsPage() {
   const { id } = useParams<{ id: string }>();
   const { sessions, playerName, patchSession } = useData();
+  const { t, n } = useI18n();
   const [addingExtra, setAddingExtra] = useState(false);
   const [editingCost, setEditingCost] = useState(false);
 
@@ -19,7 +21,6 @@ export default function SessionCostsPage() {
   if (!session) return null;
 
   const split = sessionCostSplit(session);
-  const nothingToSplit = split.grandTotalCents === 0;
 
   async function addExtra(extra: Extra) {
     if (!session) return;
@@ -35,40 +36,43 @@ export default function SessionCostsPage() {
   return (
     <>
       {editingCost ? (
-        <div className="mb-6">
+        <div className="mb-7">
           <CostEditor sessionId={session.id} onDone={() => setEditingCost(false)} />
         </div>
       ) : (
-        <section className="mb-6">
+        <section className="mb-7">
           <SectionTitle
             action={
-              <Button variant="ghost" className="h-9 min-h-9 px-3 text-sm" onClick={() => setEditingCost(true)}>
-                Edit
+              <Button variant="ghost" className="h-9 min-h-9 px-3 text-xs" onClick={() => setEditingCost(true)}>
+                {t("common.edit")}
               </Button>
             }
           >
-            The bill
+            {t("costs.theBill")}
           </SectionTitle>
           <Card className="p-4">
-            <dl className="space-y-2 text-sm">
-              <div className="flex justify-between">
+            <dl className="space-y-2.5 text-sm">
+              <div className="flex justify-between gap-3">
                 <dt className="text-muted">
-                  Court{session.courts > 1 ? "s" : ""} · {pluralise(split.totalHours, "hour")}
+                  {t("costs.courtsLine", {
+                    courts: n("court", session.courts),
+                    hours: n("hour", split.totalHours),
+                  })}
                 </dt>
-                <dd className="font-semibold tabular-nums">{formatMoney(split.courtCostCents)}</dd>
+                <dd className="score-figure">{formatMoney(split.courtCostCents)}</dd>
               </div>
-              <div className="flex justify-between">
-                <dt className="text-muted">Extras</dt>
-                <dd className="font-semibold tabular-nums">{formatMoney(split.extrasCostCents)}</dd>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted">{t("costs.extras")}</dt>
+                <dd className="score-figure">{formatMoney(split.extrasCostCents)}</dd>
               </div>
-              <div className="flex justify-between border-t border-line pt-2">
-                <dt className="font-semibold">Total</dt>
-                <dd className="font-bold tabular-nums">{formatMoney(split.grandTotalCents)}</dd>
+              <div className="flex items-center justify-between gap-3 border-t border-line pt-3">
+                <dt className="eyebrow">{t("costs.total")}</dt>
+                <dd className="score-figure text-2xl text-accent">{formatMoney(split.grandTotalCents)}</dd>
               </div>
               {session.paidBy ? (
-                <div className="flex justify-between pt-1">
-                  <dt className="text-muted">Fronted by</dt>
-                  <dd className="font-semibold">{playerName(session.paidBy)}</dd>
+                <div className="flex justify-between gap-3 pt-1">
+                  <dt className="text-muted">{t("costs.frontedBy")}</dt>
+                  <dd className="font-bold">{playerName(session.paidBy)}</dd>
                 </div>
               ) : null}
             </dl>
@@ -76,33 +80,30 @@ export default function SessionCostsPage() {
         </section>
       )}
 
-      {nothingToSplit ? (
+      {split.grandTotalCents === 0 ? (
         <EmptyState
-          icon="🧾"
-          title="No cost entered yet"
-          action={<Button onClick={() => setEditingCost(true)}>Add the court cost</Button>}
+          title={t("costs.noCostTitle")}
+          action={<Button onClick={() => setEditingCost(true)}>{t("costs.addCourtCost")}</Button>}
         >
-          Add what the court cost and everyone’s share is worked out from the rotations they played.
+          {t("costs.noCostBody")}
         </EmptyState>
       ) : (
-        <section className="mb-6">
-          <SectionTitle action={<span className="text-xs text-muted">court + extras</span>}>
-            Per player
+        <section className="mb-7">
+          <SectionTitle action={<span className="eyebrow text-muted">{t("costs.courtPlusExtras")}</span>}>
+            {t("costs.perPlayer")}
           </SectionTitle>
-          <Card className="divide-y divide-line">
+          <div className="space-y-1">
             {[...split.perPlayer]
               .sort((a, b) => b.totalCents - a.totalCents)
               .map((player) => (
-                <div key={player.playerId} className="p-4">
+                <Card key={player.playerId} className="p-4">
                   <div className="flex items-baseline justify-between gap-3">
-                    <p className="truncate font-semibold">{playerName(player.playerId)}</p>
-                    <p className="shrink-0 font-mono font-bold tabular-nums">
-                      {formatMoney(player.totalCents)}
-                    </p>
+                    <p className="truncate font-bold tracking-tight">{playerName(player.playerId)}</p>
+                    <p className="score-figure text-xl">{formatMoney(player.totalCents)}</p>
                   </div>
-                  <dl className="mt-2 space-y-1 text-sm text-muted">
+                  <dl className="mt-2.5 space-y-1 text-sm text-muted">
                     <div className="flex justify-between gap-3">
-                      <dt>Court · {pluralise(player.roundsPlayed, "rotation")}</dt>
+                      <dt>{t("costs.courtLine", { rotations: n("rotation", player.roundsPlayed) })}</dt>
                       <dd className="tabular-nums">{formatMoney(player.courtShareCents)}</dd>
                     </div>
                     {player.extras.map((extra) => (
@@ -112,23 +113,23 @@ export default function SessionCostsPage() {
                       </div>
                     ))}
                   </dl>
-                </div>
+                </Card>
               ))}
-          </Card>
+          </div>
         </section>
       )}
 
-      <section className="mb-6">
+      <section className="mb-7">
         <SectionTitle
           action={
             addingExtra ? null : (
-              <Button variant="ghost" className="h-9 min-h-9 px-3 text-sm" onClick={() => setAddingExtra(true)}>
-                + Extra
+              <Button variant="ghost" className="h-9 min-h-9 px-3 text-xs" onClick={() => setAddingExtra(true)}>
+                {t("play.extra")}
               </Button>
             )
           }
         >
-          Extras
+          {t("costs.extras")}
         </SectionTitle>
 
         {addingExtra ? (
@@ -139,59 +140,51 @@ export default function SessionCostsPage() {
             onCancel={() => setAddingExtra(false)}
           />
         ) : session.extras.length === 0 ? (
-          <EmptyState icon="🥤" title="Nothing from the fridge yet">
-            Add drinks or snacks as they happen and they’ll land on the right person’s tab.
-          </EmptyState>
+          <EmptyState title={t("costs.noExtrasTitle")}>{t("costs.noExtrasBody")}</EmptyState>
         ) : (
-          <Card className="divide-y divide-line">
+          <div className="space-y-1">
             {session.extras.map((extra) => (
-              <div key={extra.id} className="flex items-center gap-3 p-3.5">
+              <Card key={extra.id} className="flex items-center gap-3 p-3.5">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">{extra.description}</p>
+                  <p className="truncate font-bold tracking-tight">{extra.description}</p>
                   <p className="mt-0.5 truncate text-xs text-muted">
                     {extra.billedTo.map(playerName).join(", ")}
                   </p>
                 </div>
-                <span className="shrink-0 font-mono text-sm font-bold tabular-nums">
-                  {formatMoney(extra.costCents)}
-                </span>
+                <span className="score-figure shrink-0 text-sm">{formatMoney(extra.costCents)}</span>
                 <Button
                   variant="danger"
-                  className="h-9 min-h-9 shrink-0 px-2 text-sm"
+                  className="h-10 min-h-10 shrink-0 px-2"
                   onClick={() => void removeExtra(extra.id)}
-                  aria-label={`Remove ${extra.description}`}
+                  aria-label={t("extra.removeLabel", { name: extra.description })}
                 >
                   ✕
                 </Button>
-              </div>
+              </Card>
             ))}
-          </Card>
+          </div>
         )}
       </section>
 
       <section>
-        <SectionTitle>Settle up</SectionTitle>
+        <SectionTitle>{t("costs.settleUp")}</SectionTitle>
         {split.settlements.length === 0 ? (
-          <EmptyState icon="🤝" title="Nothing to settle">
-            {session.paidBy
-              ? "Everyone’s square."
-              : "Say who fronted the court payment and this works out who owes them what."}
+          <EmptyState title={t("costs.nothingToSettleTitle")}>
+            {session.paidBy ? t("costs.settledBody") : t("costs.saySomeoneFronted")}
           </EmptyState>
         ) : (
-          <Card className="divide-y divide-line">
+          <div className="space-y-1">
             {split.settlements.map((settlement, index) => (
-              <div key={index} className="flex items-center justify-between gap-3 p-3.5 text-sm">
+              <Card key={index} className="flex items-center justify-between gap-3 p-4 text-sm">
                 <span className="min-w-0 truncate">
-                  <span className="font-semibold">{playerName(settlement.from)}</span>
-                  <span className="mx-1.5 text-muted">owes</span>
-                  <span className="font-semibold">{playerName(settlement.to)}</span>
+                  <span className="font-bold">{playerName(settlement.from)}</span>
+                  <span className="mx-1.5 text-muted">{t("costs.owes")}</span>
+                  <span className="font-bold">{playerName(settlement.to)}</span>
                 </span>
-                <span className="shrink-0 font-mono font-bold tabular-nums">
-                  {formatMoney(settlement.amountCents)}
-                </span>
-              </div>
+                <span className="score-figure shrink-0 text-base">{formatMoney(settlement.amountCents)}</span>
+              </Card>
             ))}
-          </Card>
+          </div>
         )}
       </section>
     </>
@@ -200,6 +193,7 @@ export default function SessionCostsPage() {
 
 function CostEditor({ sessionId, onDone }: { sessionId: string; onDone: () => void }) {
   const { sessions, playerName, patchSession } = useData();
+  const { t } = useI18n();
   const session = sessions.find((s) => s.id === sessionId)!;
 
   const [bookings, setBookings] = useState(
@@ -225,11 +219,13 @@ function CostEditor({ sessionId, onDone }: { sessionId: string; onDone: () => vo
   }
 
   return (
-    <Card className="space-y-4 p-4">
-      <SectionTitle>The bill</SectionTitle>
+    <Card className="space-y-5 p-4">
+      <SectionTitle>{t("costs.theBill")}</SectionTitle>
       {bookings.map((booking, index) => (
         <div key={index} className="grid grid-cols-2 gap-3">
-          <Field label={bookings.length === 1 ? "Court cost" : `Court ${index + 1} cost`}>
+          <Field
+            label={bookings.length === 1 ? t("setup.courtCost") : t("setup.courtNCost", { number: index + 1 })}
+          >
             <Input
               type="number"
               inputMode="decimal"
@@ -244,7 +240,7 @@ function CostEditor({ sessionId, onDone }: { sessionId: string; onDone: () => vo
               }
             />
           </Field>
-          <Field label="Hours">
+          <Field label={t("setup.hours")}>
             <Input
               type="number"
               inputMode="decimal"
@@ -261,9 +257,9 @@ function CostEditor({ sessionId, onDone }: { sessionId: string; onDone: () => vo
         </div>
       ))}
 
-      <Field label="Who fronted the court payment?">
+      <Field label={t("costs.whoFronted")}>
         <Select value={paidBy} onChange={(e) => setPaidBy(e.target.value)}>
-          <option value="">Nobody yet</option>
+          <option value="">{t("common.nobody")}</option>
           {session.playerIds.map((playerId) => (
             <option key={playerId} value={playerId}>
               {playerName(playerId)}
@@ -274,10 +270,10 @@ function CostEditor({ sessionId, onDone }: { sessionId: string; onDone: () => vo
 
       <div className="flex gap-2">
         <Button variant="secondary" className="flex-1" onClick={onDone}>
-          Cancel
+          {t("common.cancel")}
         </Button>
         <Button className="flex-1" onClick={() => void save()}>
-          Save
+          {t("common.save")}
         </Button>
       </div>
     </Card>

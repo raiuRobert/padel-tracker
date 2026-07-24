@@ -5,20 +5,41 @@
  * that's usually floodlit in the evening. A bright white screen between points is unpleasant.
  */
 @theme {
-  --color-canvas: #0b0f14;
-  --color-surface: #141b23;
-  --color-raised: #1d2732;
-  --color-line: #27333f;
-  --color-ink: #e9eff6;
-  --color-muted: #92a5b9;
-  --color-accent: #9ae600;
-  --color-accent-ink: #0d1500;
-  --color-team-a: #38bdf8;
-  --color-team-b: #fb923c;
-  --color-danger: #f87171;
+  --color-canvas: #07090c;
+  --color-surface: #10151b;
+  --color-raised: #1a222b;
+  --color-line: #232d38;
+  --color-ink: #f2f6fa;
+  --color-muted: #8496a9;
+  --color-accent: #c8ff2f;
+  --color-accent-ink: #0b1200;
+  --color-team-a: #22a7f0;
+  --color-team-b: #ff7a2f;
+  --color-danger: #ff5f56;
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+/**
+ * Scoreboard type: numbers are the loudest thing on the screen, so they get their own treatment —
+ * tabular so they don't jitter as they tick up, and tight enough to read at a glance from arm's
+ * length while standing on a court.
+ */
+@utility score-figure {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+}
+
+/** The small all-caps labels that separate sections, in place of heavier card chrome. */
+@utility eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 :root {
