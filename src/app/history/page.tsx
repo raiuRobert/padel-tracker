@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { Badge, Button, ButtonLink, Card, EmptyState, Loading, PageTitle } from "@/components/ui";
 import { useI18n } from "@/i18n";
 import { scoredRoundCount, sessionCostSplit } from "@/lib/session";
@@ -9,6 +10,7 @@ import { useData } from "../providers";
 export default function HistoryPage() {
   const { ready, sessions, groups, removeSession } = useData();
   const { t, n, money, formatDate } = useI18n();
+  const confirm = useConfirm();
 
   if (!ready) return <Loading label={t("common.loading")} />;
 
@@ -54,10 +56,13 @@ export default function HistoryPage() {
                 variant="danger"
                 className="h-10 min-h-10 shrink-0 px-2"
                 aria-label={t("history.deleteLabel", { date })}
-                onClick={() => {
-                  if (window.confirm(t("history.confirmDelete", { date }))) {
-                    void removeSession(session.id);
-                  }
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: t("confirm.deleteSessionTitle"),
+                    message: t("history.confirmDelete", { date }),
+                    confirmLabel: t("common.delete"),
+                  });
+                  if (ok) await removeSession(session.id);
                 }}
               >
                 ✕

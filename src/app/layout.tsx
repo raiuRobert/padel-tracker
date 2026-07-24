@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { BottomNav } from "@/components/BottomNav";
+import { ConfirmProvider } from "@/components/ConfirmDialog";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { WelcomeDialog } from "@/components/WelcomeDialog";
@@ -37,15 +38,17 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className="min-h-full">
         <I18nProvider>
           <DataProvider>
-            <div className="mx-auto w-full max-w-lg px-4">
-              <div className="flex justify-end pt-3">
-                <LanguageToggle />
+            <ConfirmProvider>
+              <div className="mx-auto w-full max-w-lg px-4">
+                <div className="flex justify-end pt-3">
+                  <LanguageToggle />
+                </div>
+                <main className="pt-3 pb-4">{children}</main>
               </div>
-              <main className="pt-3 pb-4">{children}</main>
-            </div>
-            <BottomNav />
-            <WelcomeDialog />
-            <ServiceWorkerRegistration />
+              <BottomNav />
+              <WelcomeDialog />
+              <ServiceWorkerRegistration />
+            </ConfirmProvider>
           </DataProvider>
         </I18nProvider>
       </body>

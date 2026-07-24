@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { PlayerPicker } from "@/components/PlayerPicker";
 import { Badge, Button, Card, EmptyState, Input, Loading, PageTitle, SectionTitle } from "@/components/ui";
 import { useI18n } from "@/i18n";
@@ -10,6 +11,7 @@ import { useData } from "../providers";
 export default function RosterPage() {
   const { ready, players, activePlayers, addPlayer, renamePlayer, removePlayer } = useData();
   const { t, n } = useI18n();
+  const confirm = useConfirm();
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
@@ -99,10 +101,13 @@ export default function RosterPage() {
                         variant="danger"
                         className="h-10 min-h-10 px-3 text-xs"
                         aria-label={t("roster.removeLabel", { name: player.name })}
-                        onClick={() => {
-                          if (window.confirm(t("roster.confirmRemovePlayer", { name: player.name }))) {
-                            void removePlayer(player.id);
-                          }
+                        onClick={async () => {
+                          const ok = await confirm({
+                            title: t("confirm.removePlayerTitle"),
+                            message: t("roster.confirmRemovePlayer", { name: player.name }),
+                            confirmLabel: t("common.remove"),
+                          });
+                          if (ok) await removePlayer(player.id);
                         }}
                       >
                         {t("common.remove")}
@@ -124,6 +129,7 @@ export default function RosterPage() {
 function GroupsSection() {
   const { activePlayers, groups, addGroup, updateGroup, removeGroup, playerName } = useData();
   const { t } = useI18n();
+  const confirm = useConfirm();
   const [editing, setEditing] = useState<Group | "new" | null>(null);
 
   if (editing) {
@@ -183,10 +189,13 @@ function GroupsSection() {
                   <Button
                     variant="danger"
                     className="h-10 min-h-10 px-3 text-xs"
-                    onClick={() => {
-                      if (window.confirm(t("roster.confirmDeleteGroup", { name: group.name }))) {
-                        void removeGroup(group.id);
-                      }
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: t("confirm.deleteGroupTitle"),
+                        message: t("roster.confirmDeleteGroup", { name: group.name }),
+                        confirmLabel: t("common.delete"),
+                      });
+                      if (ok) await removeGroup(group.id);
                     }}
                   >
                     {t("common.delete")}

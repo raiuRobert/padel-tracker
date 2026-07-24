@@ -26,6 +26,11 @@ const en = {
   "common.saving": "Saving…",
   "common.nobody": "Nobody yet",
   "common.language": "Language",
+  "common.confirm": "Confirm",
+
+  "confirm.removePlayerTitle": "Remove player?",
+  "confirm.deleteGroupTitle": "Delete group?",
+  "confirm.deleteSessionTitle": "Delete session?",
 
   "home.subtitle": "Fair rotations, live scores, an honest split.",
   "home.inProgress": "In progress",
@@ -222,6 +227,11 @@ const ro: Record<MessageKey, string> = {
   "common.saving": "Se salvează…",
   "common.nobody": "Nimeni deocamdată",
   "common.language": "Limbă",
+  "common.confirm": "Confirmă",
+
+  "confirm.removePlayerTitle": "Elimini jucătorul?",
+  "confirm.deleteGroupTitle": "Ștergi grupul?",
+  "confirm.deleteSessionTitle": "Ștergi sesiunea?",
 
   "home.subtitle": "Rotații corecte, scor pe loc, împărțire cinstită.",
   "home.inProgress": "În desfășurare",
