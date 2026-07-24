@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { BottomNav } from "@/components/BottomNav";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
+import { WelcomeDialog } from "@/components/WelcomeDialog";
 import { I18nProvider } from "@/i18n";
 import { DataProvider } from "./providers";
 import "./globals.css";
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <main className="pt-3 pb-4">{children}</main>
             </div>
             <BottomNav />
+            <WelcomeDialog />
             <ServiceWorkerRegistration />
           </DataProvider>
         </I18nProvider>

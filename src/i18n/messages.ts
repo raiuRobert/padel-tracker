@@ -42,6 +42,21 @@ const en = {
   "home.noFinishedTitle": "No finished sessions yet",
   "home.noFinishedBody": "Once you wrap up a session it shows here, with the final standings and who owes what.",
 
+  "welcome.title": "Welcome to Padel Tracker",
+  "welcome.intro": "A courtside app for social padel. Three things it does:",
+  "welcome.rotationsTitle": "Fair rotations",
+  "welcome.rotationsBody":
+    "Works out who partners and plays against whom — 4 to 8 players, 1 or 2 courts — as evenly as possible.",
+  "welcome.scoresTitle": "Live scores",
+  "welcome.scoresBody": "Tap the winning team after each round and see who's on top.",
+  "welcome.costsTitle": "Fair cost split",
+  "welcome.costsBody":
+    "Splits the court fee by how long each person actually played, plus whatever they grabbed from the fridge.",
+  "welcome.footer": "No account, works offline. Start by adding your players.",
+  "welcome.addPlayers": "Add players",
+  "welcome.dismiss": "Maybe later",
+  "welcome.close": "Close",
+
   "roster.title": "Roster",
   "roster.subtitle": "Everyone who plays, plus the groups you start sessions from.",
   "roster.players": "Players",
@@ -222,6 +237,21 @@ const ro: Record<MessageKey, string> = {
   "home.noFinishedTitle": "Nicio sesiune încheiată",
   "home.noFinishedBody":
     "După ce închei o sesiune apare aici, cu clasamentul final și cine cât are de plătit.",
+
+  "welcome.title": "Bine ai venit la Padel Tracker",
+  "welcome.intro": "O aplicație de teren pentru padel între prieteni. Trei lucruri pe care le face:",
+  "welcome.rotationsTitle": "Rotații corecte",
+  "welcome.rotationsBody":
+    "Stabilește cine cu cine face pereche și împotriva cui joacă — de la 4 la 8 jucători, 1 sau 2 terenuri — cât mai echilibrat.",
+  "welcome.scoresTitle": "Scor pe loc",
+  "welcome.scoresBody": "Apeși echipa câștigătoare după fiecare rundă și vezi cine e în frunte.",
+  "welcome.costsTitle": "Împărțire cinstită",
+  "welcome.costsBody":
+    "Împarte costul terenului după cât a jucat fiecare, plus ce a mai luat de la frigider.",
+  "welcome.footer": "Fără cont, merge offline. Începe prin a adăuga jucătorii.",
+  "welcome.addPlayers": "Adaugă jucători",
+  "welcome.dismiss": "Poate mai târziu",
+  "welcome.close": "Închide",
 
   "roster.title": "Jucători",
   "roster.subtitle": "Toți cei care joacă, plus grupurile din care pornești sesiunile.",
