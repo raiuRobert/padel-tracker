@@ -18,19 +18,51 @@ function toSession(id: string, data: SessionData): Session {
   return { ...data, id };
 }
 
+/**
+ * The newest `updated_at` this device has applied, per session.
+ *
+ * Realtime delivers changes, but not a guarantee that they arrive in the order they were written.
+ * A device that scores a round and then immediately writes the next one can see the echo of the
+ * *first* write land after the second, which would roll its own state backwards — losing the round
+ * that was just added and leaving the session looking finished. Every write is stamped by the
+ * database, so comparing stamps is enough to drop anything that isn't news.
+ *
+ * Server timestamps only: nothing here compares a client clock to a server one.
+ */
+const lastApplied = new Map<string, string>();
+
+/** True when this row is newer than whatever we last took for that session. */
+function isNews(id: string, updatedAt: string | undefined): boolean {
+  if (!updatedAt) return true;
+  const seen = lastApplied.get(id);
+  if (seen && updatedAt <= seen) return false;
+  lastApplied.set(id, updatedAt);
+  return true;
+}
+
 export async function pushSession(session: Session): Promise<void> {
   const sb = getSupabase();
   if (!sb) return;
   const { id, ...data } = session;
-  const { error } = await sb.from("sessions").upsert({ id, data });
-  if (error) console.warn("padel: failed to push session", error.message);
+  // Ask for the new stamp back so our own write can't later be undone by its own echo.
+  const { data: row, error } = await sb
+    .from("sessions")
+    .upsert({ id, data })
+    .select("updated_at")
+    .maybeSingle();
+  if (error) {
+    console.warn("padel: failed to push session", error.message);
+    return;
+  }
+  if (row?.updated_at) isNews(id, row.updated_at as string);
 }
 
 export async function fetchRemoteSession(id: string): Promise<Session | null> {
   const sb = getSupabase();
   if (!sb) return null;
-  const { data, error } = await sb.from("sessions").select("data").eq("id", id).maybeSingle();
+  const { data, error } = await sb.from("sessions").select("data, updated_at").eq("id", id).maybeSingle();
   if (error || !data) return null;
+  isNews(id, data.updated_at as string);
   return toSession(id, data.data as SessionData);
 }
 
@@ -63,10 +95,17 @@ export async function applyRoundResults(
     if (error) console.warn("padel: failed to record results", error.message);
     return null;
   }
-  return toSession(id, data as SessionData);
+  const { data: document, updatedAt } = data as { data: SessionData; updatedAt: string };
+  isNews(id, updatedAt);
+  return toSession(id, document);
 }
 
-/** Calls back with the new session whenever this row changes anywhere. Returns an unsubscribe. */
+/**
+ * Calls back with the new session whenever this row changes anywhere. Returns an unsubscribe.
+ *
+ * Changes that are older than something already applied are dropped rather than handed on — see
+ * `lastApplied`.
+ */
 export function subscribeToSession(id: string, onChange: (session: Session) => void): () => void {
   const sb = getSupabase();
   if (!sb) return () => {};
@@ -77,8 +116,8 @@ export function subscribeToSession(id: string, onChange: (session: Session) => v
       "postgres_changes",
       { event: "*", schema: "public", table: "sessions", filter: `id=eq.${id}` },
       (payload) => {
-        const row = payload.new as { data?: SessionData } | undefined;
-        if (row?.data) onChange(toSession(id, row.data));
+        const row = payload.new as { data?: SessionData; updated_at?: string } | undefined;
+        if (row?.data && isNews(id, row.updated_at)) onChange(toSession(id, row.data));
       },
     )
     .subscribe();

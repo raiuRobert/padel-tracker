@@ -91,22 +91,26 @@ export default function SessionPlayPage() {
   const { t, n } = useI18n();
   const [addingExtra, setAddingExtra] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const ensured = useRef<string | null>(null);
+  const appending = useRef(false);
 
   const session = sessions.find((s) => s.id === id);
 
   /**
-   * Make sure there's always a round waiting to be played. Americano's whole schedule is generated
-   * up front — that's what makes it Americano — while Mexicano's next round can only be built once
-   * the previous one has been scored.
+   * Make sure there's always a round waiting to be played, for as long as the session is open. A
+   * session ends when someone says it does, not when a schedule runs out: Americano generates its
+   * planned rounds up front — that's what makes it Americano — and once those are played it keeps
+   * extending, and Mexicano builds each round from the standings as the previous one is scored.
+   *
+   * The guard is "am I already writing one?" rather than "have I written one for this many rounds
+   * before?". The latter looks equivalent and is what was here, but it stops matching reality the
+   * moment the round count ever goes back down — a late realtime echo can do that — and then it
+   * blocks the retry that would have fixed it, leaving the session with nothing left to play. A flag
+   * that always clears can't wedge that way.
    */
   useEffect(() => {
-    if (!session || session.status !== "active" || currentRound(session)) return;
+    if (!session || session.status !== "active" || currentRound(session) || appending.current) return;
 
-    const key = `${session.id}:${session.rounds.length}`;
-    if (ensured.current === key) return;
-    ensured.current = key;
-
+    appending.current = true;
     const rounds =
       session.mode === "americano" && session.rounds.length === 0
         ? generateAmericanoSchedule({
@@ -116,7 +120,9 @@ export default function SessionPlayPage() {
           }).map<SessionRound>((round) => ({ ...round, results: [] }))
         : [...session.rounds, buildNextRound(session)];
 
-    void patchSession(session.id, { rounds });
+    void patchSession(session.id, { rounds }).finally(() => {
+      appending.current = false;
+    });
   }, [session, patchSession]);
 
   if (!session) return null;
