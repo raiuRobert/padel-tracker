@@ -12,44 +12,92 @@ import { useData } from "../providers";
 const MIN_PLAYERS = 4;
 
 /**
- * How far off a playable session the roster is.
+ * One line carrying everything about the size of the roster: how many players there are, whether
+ * that's enough, and how many more are needed.
  *
- * Testers who had added one or two players couldn't tell how many more they needed; the app only
- * told them once they tried to start a session and got turned away. Four pips and a line of text
- * make the target and the gap visible while they're still typing names.
+ * It replaced three separate elements that all encoded the same fact — a count in the section
+ * header, the pips, and the hint text. The pips only earn their place while they're actionable, so
+ * below the minimum they show the gap and above it they simply confirm, with the count folded into
+ * the same sentence. No background either: another full-width band just added a box to look past.
  */
-function RosterProgress({ count }: { count: number }) {
+function RosterStatus({ count }: { count: number }) {
   const { t, n } = useI18n();
   const enough = count >= MIN_PLAYERS;
   const missing = MIN_PLAYERS - count;
 
   return (
-    <div
-      className={`mt-2 flex items-center gap-3 rounded-lg px-3 py-2.5 ${
-        enough ? "bg-accent/10" : "bg-raised"
-      }`}
-    >
+    <p className={`mt-2.5 flex items-center gap-2.5 px-1 text-xs font-semibold ${enough ? "text-accent" : "text-muted"}`}>
       <span className="flex shrink-0 gap-1" aria-hidden>
         {Array.from({ length: MIN_PLAYERS }, (_, i) => (
           <span
             key={i}
-            className={`size-2 rounded-full transition-colors duration-300 ${
+            className={`size-1.5 rounded-full transition-colors duration-300 ${
               i < Math.min(count, MIN_PLAYERS) ? "bg-accent" : "bg-line"
             }`}
           />
         ))}
       </span>
-      <p className={`text-xs leading-snug font-semibold ${enough ? "text-accent" : "text-muted"}`}>
-        {enough ? t("roster.readyToPlay") : t("roster.needMore", { players: n("player", missing) })}
-      </p>
-    </div>
+      {enough
+        ? t("roster.readyToPlay", { players: n("player", count) })
+        : t("roster.needMore", { players: n("player", missing) })}
+    </p>
+  );
+}
+
+/** Rename and remove, as icons. Two words per row multiplied out to a wall of text on a phone. */
+function RowAction({
+  label,
+  icon,
+  onClick,
+  tone = "muted",
+}: {
+  label: string;
+  icon: "rename" | "remove";
+  onClick: () => void;
+  tone?: "muted" | "danger";
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      // 44px, the same minimum the rest of the app's controls use — an icon button is smaller to
+      // look at but still has to be as easy to hit as the words it replaced.
+      className={`flex size-11 shrink-0 items-center justify-center rounded-lg transition-colors
+                  duration-150 active:scale-95 ${
+                    tone === "danger"
+                      ? "text-muted hover:bg-danger/10 hover:text-danger"
+                      : "text-muted hover:bg-raised hover:text-ink"
+                  }`}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        className="size-4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        {icon === "rename" ? (
+          <>
+            <path d="M12 20h9" />
+            <path d="M16.4 3.6a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+          </>
+        ) : (
+          <path d="M6 6l12 12M18 6L6 18" />
+        )}
+      </svg>
+    </button>
   );
 }
 
 export default function RosterPage() {
   const { ready, players, activePlayers, addPlayer, renamePlayer, removePlayer, removeAllPlayers } =
     useData();
-  const { t, n } = useI18n();
+  const { t } = useI18n();
   const confirm = useConfirm();
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -99,26 +147,24 @@ export default function RosterPage() {
       <Card
         key={player.id}
         style={{ "--stagger": index } as React.CSSProperties}
-        className="rise-in flex items-center gap-2 p-2.5"
+        className="rise-in flex items-center gap-1 py-1.5 pr-1.5 pl-3.5"
       >
-        <span className={`flex-1 truncate pl-1.5 font-bold tracking-tight ${player.archived ? "text-muted" : ""}`}>
+        <span className={`flex-1 truncate font-bold tracking-tight ${player.archived ? "text-muted" : ""}`}>
           {player.name}
         </span>
-        <Button
-          variant="ghost"
-          className="h-10 min-h-10 px-3 text-xs"
+        <RowAction
+          label={t("roster.renameLabel", { name: player.name })}
+          icon="rename"
           onClick={() => {
             setEditingId(player.id);
             setEditingName(player.name);
           }}
-        >
-          {t("roster.rename")}
-        </Button>
+        />
         {player.archived ? null : (
-          <Button
-            variant="danger"
-            className="h-10 min-h-10 px-3 text-xs"
-            aria-label={t("roster.removeLabel", { name: player.name })}
+          <RowAction
+            label={t("roster.removeLabel", { name: player.name })}
+            icon="remove"
+            tone="danger"
             onClick={async () => {
               const ok = await confirm({
                 title: t("confirm.removePlayerTitle"),
@@ -127,9 +173,7 @@ export default function RosterPage() {
               });
               if (ok) await removePlayer(player.id);
             }}
-          >
-            {t("common.remove")}
-          </Button>
+          />
         )}
       </Card>
     );
@@ -140,31 +184,7 @@ export default function RosterPage() {
       <PageTitle title={t("roster.title")} subtitle={t("roster.subtitle")} />
 
       <section className="mb-9">
-        <SectionTitle
-          action={
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-muted">{n("player", activePlayers.length)}</span>
-              {activePlayers.length > 0 ? (
-                <Button
-                  variant="danger"
-                  className="h-9 min-h-9 px-2.5 text-xs"
-                  onClick={async () => {
-                    const ok = await confirm({
-                      title: t("roster.confirmClearAllTitle"),
-                      message: t("roster.confirmClearAll", { count: activePlayers.length }),
-                      confirmLabel: t("roster.clearAll"),
-                    });
-                    if (ok) await removeAllPlayers();
-                  }}
-                >
-                  {t("roster.clearAll")}
-                </Button>
-              ) : null}
-            </div>
-          }
-        >
-          {t("roster.players")}
-        </SectionTitle>
+        <SectionTitle>{t("roster.players")}</SectionTitle>
 
         <form onSubmit={submitPlayer} className="flex gap-2">
           <Input
@@ -179,14 +199,37 @@ export default function RosterPage() {
           </Button>
         </form>
 
-        <RosterProgress count={activePlayers.length} />
+        <RosterStatus count={activePlayers.length} />
 
         {activePlayers.length === 0 ? (
-          <div className="mt-2">
+          <div className="mt-3">
             <EmptyState title={t("roster.noPlayersTitle")}>{t("roster.noPlayersBody")}</EmptyState>
           </div>
         ) : (
-          <div className="mt-2 space-y-1">{activePlayers.map(playerRow)}</div>
+          <>
+            <div className="mt-3 space-y-1">{activePlayers.map(playerRow)}</div>
+            {/*
+              At the end rather than in the header, and quiet until you reach for it: clearing the
+              whole roster is rare and irreversible, so it shouldn't sit above the list competing
+              with the per-row remove for attention. The confirmation is where the red belongs.
+            */}
+            <div className="mt-2 flex justify-end">
+              <Button
+                variant="ghost"
+                className="h-9 min-h-9 px-2.5 text-xs hover:text-danger"
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: t("roster.confirmClearAllTitle"),
+                    message: t("roster.confirmClearAll", { count: activePlayers.length }),
+                    confirmLabel: t("roster.clearAll"),
+                  });
+                  if (ok) await removeAllPlayers();
+                }}
+              >
+                {t("roster.clearAll")}
+              </Button>
+            </div>
+          </>
         )}
       </section>
 

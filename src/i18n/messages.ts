@@ -74,7 +74,7 @@ const en = {
   "roster.removeLabel": "Remove {name}",
   "roster.archived": "archived",
   "roster.needMore": "Add {players} more to start a session.",
-  "roster.readyToPlay": "Enough players — you can start a session.",
+  "roster.readyToPlay": "{players} — enough to start a session.",
   "roster.clearAll": "Remove all",
   "roster.confirmClearAllTitle": "Remove all players?",
   "roster.confirmClearAll":
@@ -305,7 +305,7 @@ const ro: Record<MessageKey, string> = {
   "roster.removeLabel": "Elimină {name}",
   "roster.archived": "arhivat",
   "roster.needMore": "Adaugă încă {players} ca să poți începe o sesiune.",
-  "roster.readyToPlay": "Destui jucători — poți începe o sesiune.",
+  "roster.readyToPlay": "{players} — destui pentru o sesiune.",
   "roster.clearAll": "Elimină toți",
   "roster.confirmClearAllTitle": "Elimini toți jucătorii?",
   "roster.confirmClearAll":
