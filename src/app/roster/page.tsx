@@ -3,13 +3,52 @@
 import { useState, type FormEvent } from "react";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { PlayerPicker } from "@/components/PlayerPicker";
-import { Badge, Button, Card, EmptyState, Input, Loading, PageTitle, SectionTitle } from "@/components/ui";
+import { Button, Card, EmptyState, Input, Loading, PageTitle, SectionTitle } from "@/components/ui";
 import { useI18n } from "@/i18n";
 import type { Group } from "@/lib/domain";
 import { useData } from "../providers";
 
+/** The number of players below which no session can start — 4 fills one court. */
+const MIN_PLAYERS = 4;
+
+/**
+ * How far off a playable session the roster is.
+ *
+ * Testers who had added one or two players couldn't tell how many more they needed; the app only
+ * told them once they tried to start a session and got turned away. Four pips and a line of text
+ * make the target and the gap visible while they're still typing names.
+ */
+function RosterProgress({ count }: { count: number }) {
+  const { t, n } = useI18n();
+  const enough = count >= MIN_PLAYERS;
+  const missing = MIN_PLAYERS - count;
+
+  return (
+    <div
+      className={`mt-2 flex items-center gap-3 rounded-lg px-3 py-2.5 ${
+        enough ? "bg-accent/10" : "bg-raised"
+      }`}
+    >
+      <span className="flex shrink-0 gap-1" aria-hidden>
+        {Array.from({ length: MIN_PLAYERS }, (_, i) => (
+          <span
+            key={i}
+            className={`size-2 rounded-full transition-colors duration-300 ${
+              i < Math.min(count, MIN_PLAYERS) ? "bg-accent" : "bg-line"
+            }`}
+          />
+        ))}
+      </span>
+      <p className={`text-xs leading-snug font-semibold ${enough ? "text-accent" : "text-muted"}`}>
+        {enough ? t("roster.readyToPlay") : t("roster.needMore", { players: n("player", missing) })}
+      </p>
+    </div>
+  );
+}
+
 export default function RosterPage() {
-  const { ready, players, activePlayers, addPlayer, renamePlayer, removePlayer } = useData();
+  const { ready, players, activePlayers, addPlayer, renamePlayer, removePlayer, removeAllPlayers } =
+    useData();
   const { t, n } = useI18n();
   const confirm = useConfirm();
   const [newName, setNewName] = useState("");
@@ -17,6 +56,8 @@ export default function RosterPage() {
   const [editingName, setEditingName] = useState("");
 
   if (!ready) return <Loading label={t("common.loading")} />;
+
+  const archived = players.filter((player) => player.archived);
 
   async function submitPlayer(event: FormEvent) {
     event.preventDefault();
@@ -32,16 +73,100 @@ export default function RosterPage() {
     setEditingId(null);
   }
 
+  /** One roster row. Shared by the active and archived lists, which differ only in the remove action. */
+  function playerRow(player: (typeof players)[number], index: number) {
+    if (editingId === player.id) {
+      return (
+        <Card key={player.id} className="flex items-center gap-2 p-2.5">
+          <Input
+            value={editingName}
+            onChange={(e) => setEditingName(e.target.value)}
+            aria-label={t("roster.renameLabel", { name: player.name })}
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void saveRename(player.id);
+              if (e.key === "Escape") setEditingId(null);
+            }}
+          />
+          <Button variant="secondary" onClick={() => void saveRename(player.id)} className="shrink-0">
+            {t("common.save")}
+          </Button>
+        </Card>
+      );
+    }
+
+    return (
+      <Card
+        key={player.id}
+        style={{ "--stagger": index } as React.CSSProperties}
+        className="rise-in flex items-center gap-2 p-2.5"
+      >
+        <span className={`flex-1 truncate pl-1.5 font-bold tracking-tight ${player.archived ? "text-muted" : ""}`}>
+          {player.name}
+        </span>
+        <Button
+          variant="ghost"
+          className="h-10 min-h-10 px-3 text-xs"
+          onClick={() => {
+            setEditingId(player.id);
+            setEditingName(player.name);
+          }}
+        >
+          {t("roster.rename")}
+        </Button>
+        {player.archived ? null : (
+          <Button
+            variant="danger"
+            className="h-10 min-h-10 px-3 text-xs"
+            aria-label={t("roster.removeLabel", { name: player.name })}
+            onClick={async () => {
+              const ok = await confirm({
+                title: t("confirm.removePlayerTitle"),
+                message: t("roster.confirmRemovePlayer", { name: player.name }),
+                confirmLabel: t("common.remove"),
+              });
+              if (ok) await removePlayer(player.id);
+            }}
+          >
+            {t("common.remove")}
+          </Button>
+        )}
+      </Card>
+    );
+  }
+
   return (
     <>
       <PageTitle title={t("roster.title")} subtitle={t("roster.subtitle")} />
 
       <section className="mb-9">
-        <SectionTitle action={<span className="text-xs text-muted">{n("player", activePlayers.length)}</span>}>
+        <SectionTitle
+          action={
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted">{n("player", activePlayers.length)}</span>
+              {activePlayers.length > 0 ? (
+                <Button
+                  variant="danger"
+                  className="h-9 min-h-9 px-2.5 text-xs"
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: t("roster.confirmClearAllTitle"),
+                      message: t("roster.confirmClearAll", { count: activePlayers.length }),
+                      confirmLabel: t("roster.clearAll"),
+                    });
+                    if (ok) await removeAllPlayers();
+                  }}
+                >
+                  {t("roster.clearAll")}
+                </Button>
+              ) : null}
+            </div>
+          }
+        >
           {t("roster.players")}
         </SectionTitle>
 
-        <form onSubmit={submitPlayer} className="mb-2 flex gap-2">
+        <form onSubmit={submitPlayer} className="flex gap-2">
           <Input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
@@ -54,72 +179,31 @@ export default function RosterPage() {
           </Button>
         </form>
 
-        {players.length === 0 ? (
-          <EmptyState title={t("roster.noPlayersTitle")}>{t("roster.noPlayersBody")}</EmptyState>
-        ) : (
-          <div className="space-y-1">
-            {players.map((player) => (
-              <Card key={player.id} className="flex items-center gap-2 p-2.5">
-                {editingId === player.id ? (
-                  <>
-                    <Input
-                      value={editingName}
-                      onChange={(e) => setEditingName(e.target.value)}
-                      aria-label={t("roster.renameLabel", { name: player.name })}
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") void saveRename(player.id);
-                        if (e.key === "Escape") setEditingId(null);
-                      }}
-                    />
-                    <Button variant="secondary" onClick={() => void saveRename(player.id)} className="shrink-0">
-                      {t("common.save")}
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <span className="flex-1 truncate pl-1.5 font-bold tracking-tight">
-                      {player.name}
-                      {player.archived ? (
-                        <span className="ml-2 align-middle">
-                          <Badge>{t("roster.archived")}</Badge>
-                        </span>
-                      ) : null}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      className="h-10 min-h-10 px-3 text-xs"
-                      onClick={() => {
-                        setEditingId(player.id);
-                        setEditingName(player.name);
-                      }}
-                    >
-                      {t("roster.rename")}
-                    </Button>
-                    {player.archived ? null : (
-                      <Button
-                        variant="danger"
-                        className="h-10 min-h-10 px-3 text-xs"
-                        aria-label={t("roster.removeLabel", { name: player.name })}
-                        onClick={async () => {
-                          const ok = await confirm({
-                            title: t("confirm.removePlayerTitle"),
-                            message: t("roster.confirmRemovePlayer", { name: player.name }),
-                            confirmLabel: t("common.remove"),
-                          });
-                          if (ok) await removePlayer(player.id);
-                        }}
-                      >
-                        {t("common.remove")}
-                      </Button>
-                    )}
-                  </>
-                )}
-              </Card>
-            ))}
+        <RosterProgress count={activePlayers.length} />
+
+        {activePlayers.length === 0 ? (
+          <div className="mt-2">
+            <EmptyState title={t("roster.noPlayersTitle")}>{t("roster.noPlayersBody")}</EmptyState>
           </div>
+        ) : (
+          <div className="mt-2 space-y-1">{activePlayers.map(playerRow)}</div>
         )}
       </section>
+
+      {/*
+        Archived players sat in the middle of the roster with a badge, which made the list read as
+        longer than it is and put people you can't pick next to people you can. They're history, so
+        they belong below the live roster, not inside it.
+      */}
+      {archived.length > 0 ? (
+        <section className="mb-9">
+          <SectionTitle action={<span className="text-xs text-muted tabular-nums">{archived.length}</span>}>
+            {t("roster.archivedSection")}
+          </SectionTitle>
+          <div className="space-y-1">{archived.map(playerRow)}</div>
+          <p className="mt-2.5 px-1 text-xs leading-relaxed text-muted">{t("roster.archivedHint")}</p>
+        </section>
+      ) : null}
 
       <GroupsSection />
     </>
@@ -127,10 +211,30 @@ export default function RosterPage() {
 }
 
 function GroupsSection() {
-  const { activePlayers, groups, addGroup, updateGroup, removeGroup, playerName } = useData();
+  const { activePlayers, groups, sessions, addGroup, updateGroup, removeGroup, playerName } = useData();
   const { t } = useI18n();
   const confirm = useConfirm();
   const [editing, setEditing] = useState<Group | "new" | null>(null);
+
+  /**
+   * Deleting a group doesn't touch a session started from it — a session carries its own players and
+   * their names, so it keeps working. Testers found that surprising, so the prompt now says it
+   * outright, including the one consequence that isn't obvious: those results stop counting towards
+   * the group's all-time table.
+   *
+   * The session deliberately isn't stopped. Ending a live game because someone tidied their roster
+   * would throw away scores that are still being played for, which is far worse than a stale link.
+   */
+  async function confirmDeleteGroup(group: Group): Promise<boolean> {
+    const hasActiveSession = sessions.some((s) => s.groupId === group.id && s.status === "active");
+    return confirm({
+      title: t("confirm.deleteGroupTitle"),
+      message: hasActiveSession
+        ? t("roster.confirmDeleteGroupActive", { name: group.name })
+        : t("roster.confirmDeleteGroup", { name: group.name }),
+      confirmLabel: t("common.delete"),
+    });
+  }
 
   if (editing) {
     return (
@@ -190,12 +294,7 @@ function GroupsSection() {
                     variant="danger"
                     className="h-10 min-h-10 px-3 text-xs"
                     onClick={async () => {
-                      const ok = await confirm({
-                        title: t("confirm.deleteGroupTitle"),
-                        message: t("roster.confirmDeleteGroup", { name: group.name }),
-                        confirmLabel: t("common.delete"),
-                      });
-                      if (ok) await removeGroup(group.id);
+                      if (await confirmDeleteGroup(group)) await removeGroup(group.id);
                     }}
                   >
                     {t("common.delete")}

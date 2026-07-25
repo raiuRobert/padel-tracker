@@ -34,6 +34,8 @@ interface DataContextValue {
   addPlayer: (name: string) => Promise<void>;
   renamePlayer: (id: string, name: string) => Promise<void>;
   removePlayer: (id: string) => Promise<void>;
+  /** Clears the roster in one go. Anyone with session history is archived, not deleted. */
+  removeAllPlayers: () => Promise<void>;
   addGroup: (name: string, playerIds: readonly string[]) => Promise<void>;
   updateGroup: (id: string, patch: Partial<Pick<Group, "name" | "playerIds">>) => Promise<void>;
   removeGroup: (id: string) => Promise<void>;
@@ -117,6 +119,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const removePlayer = useCallback(async (id: string) => {
     await getRepository().deletePlayer(id);
+    await reload();
+  }, [reload]);
+
+  const removeAllPlayers = useCallback(async () => {
+    const repo = getRepository();
+    // Goes through deletePlayer one at a time so each player still gets the archive-or-delete
+    // decision and the group clean-up, rather than a bulk wipe that would drop names past sessions
+    // still need. Reloads once at the end instead of per player.
+    const current = await repo.listPlayers();
+    for (const player of current) {
+      if (!player.archived) await repo.deletePlayer(player.id);
+    }
     await reload();
   }, [reload]);
 
@@ -226,6 +240,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addPlayer,
       renamePlayer,
       removePlayer,
+      removeAllPlayers,
       addGroup,
       updateGroup,
       removeGroup,
@@ -244,6 +259,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     addPlayer,
     renamePlayer,
     removePlayer,
+    removeAllPlayers,
     addGroup,
     updateGroup,
     removeGroup,

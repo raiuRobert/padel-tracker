@@ -73,6 +73,15 @@ const en = {
   "roster.renameLabel": "Rename {name}",
   "roster.removeLabel": "Remove {name}",
   "roster.archived": "archived",
+  "roster.needMore": "Add {players} more to start a session.",
+  "roster.readyToPlay": "Enough players — you can start a session.",
+  "roster.clearAll": "Remove all",
+  "roster.confirmClearAllTitle": "Remove all players?",
+  "roster.confirmClearAll":
+    "Remove all {count} players from the roster and from every saved group?\n\nAnyone who has played a session is kept as archived, so past results still show their name.",
+  "roster.archivedSection": "Archived",
+  "roster.archivedHint":
+    "Removed from the roster but kept so past sessions still show their names. They aren't offered when starting a session.",
   "roster.groups": "Groups",
   "roster.newGroup": "+ New group",
   "roster.editGroup": "Edit group",
@@ -85,6 +94,8 @@ const en = {
   "roster.confirmRemovePlayer":
     "Remove {name} from the roster and any saved groups?\n\nIf they've played a session they're kept as archived, so past results still show their name.",
   "roster.confirmDeleteGroup": "Delete the group \"{name}\"? Players are kept.",
+  "roster.confirmDeleteGroupActive":
+    "Delete the group \"{name}\"?\n\nThere's a session in progress from this group. It will keep running and nothing is lost — but its results will no longer count towards this group's all-time table, only the overall one. Players are kept.",
 
   "setup.title": "New session",
   "setup.subtitle": "Set it up once; everything after this is tapping the winner.",
@@ -199,8 +210,9 @@ const en = {
   "costs.noCostBody":
     "Add what the court cost and everyone's share is worked out from the rotations they played.",
   "costs.addCourtCost": "Add the court cost",
-  "costs.noExtrasTitle": "Nothing from the fridge yet",
-  "costs.noExtrasBody": "Add drinks or snacks as they happen and they'll land on the right person's tab.",
+  "costs.noExtrasTitle": "Nothing extra yet",
+  "costs.noExtrasBody":
+    "Balls, a grip, a borrowed racket, drinks from the fridge — add them as they happen and they land on the right person's tab.",
   "costs.settleUp": "Settle up",
   "costs.nothingToSettleTitle": "Nothing to settle",
   "costs.settledBody": "Everyone's square.",
@@ -210,7 +222,7 @@ const en = {
 
   "extra.title": "Add an extra",
   "extra.what": "What was it?",
-  "extra.whatPlaceholder": "Beer, water, balls…",
+  "extra.whatPlaceholder": "Balls, grip, drinks…",
   "extra.cost": "Cost",
   "extra.billedTo": "Billed to",
   "extra.billedHint": "Split evenly between whoever you pick — not the whole session.",
@@ -292,6 +304,15 @@ const ro: Record<MessageKey, string> = {
   "roster.renameLabel": "Redenumește {name}",
   "roster.removeLabel": "Elimină {name}",
   "roster.archived": "arhivat",
+  "roster.needMore": "Adaugă încă {players} ca să poți începe o sesiune.",
+  "roster.readyToPlay": "Destui jucători — poți începe o sesiune.",
+  "roster.clearAll": "Elimină toți",
+  "roster.confirmClearAllTitle": "Elimini toți jucătorii?",
+  "roster.confirmClearAll":
+    "Elimini toți cei {count} jucători din listă și din grupurile salvate?\n\nCine a jucat deja o sesiune rămâne arhivat, ca rezultatele vechi să-i păstreze numele.",
+  "roster.archivedSection": "Arhivați",
+  "roster.archivedHint":
+    "Eliminați din listă, dar păstrați ca sesiunile vechi să le arate numele. Nu apar când începi o sesiune nouă.",
   "roster.groups": "Grupuri",
   "roster.newGroup": "+ Grup nou",
   "roster.editGroup": "Editează grupul",
@@ -304,6 +325,8 @@ const ro: Record<MessageKey, string> = {
   "roster.confirmRemovePlayer":
     "Elimini pe {name} din listă și din grupurile salvate?\n\nDacă a jucat deja o sesiune, rămâne arhivat, ca rezultatele vechi să-i păstreze numele.",
   "roster.confirmDeleteGroup": "Ștergi grupul „{name}”? Jucătorii rămân.",
+  "roster.confirmDeleteGroupActive":
+    "Ștergi grupul „{name}”?\n\nExistă o sesiune în desfășurare din acest grup. Ea continuă și nu se pierde nimic — dar rezultatele nu vor mai intra în clasamentul general al acestui grup, doar în cel pe toți. Jucătorii rămân.",
 
   "setup.title": "Sesiune nouă",
   "setup.subtitle": "O configurezi o dată; după asta doar apeși echipa câștigătoare.",
@@ -418,8 +441,9 @@ const ro: Record<MessageKey, string> = {
   "costs.noCostBody":
     "Adaugă cât a costat terenul, iar partea fiecăruia se calculează din rotațiile jucate.",
   "costs.addCourtCost": "Adaugă costul terenului",
-  "costs.noExtrasTitle": "Nimic de la frigider încă",
-  "costs.noExtrasBody": "Adaugă băuturi sau gustări pe măsură ce apar și ajung pe nota cui trebuie.",
+  "costs.noExtrasTitle": "Niciun extra încă",
+  "costs.noExtrasBody":
+    "Mingi, un grip, o paletă împrumutată, băuturi de la frigider — adaugă-le pe măsură ce apar și ajung pe nota cui trebuie.",
   "costs.settleUp": "Deconturi",
   "costs.nothingToSettleTitle": "Nimic de decontat",
   "costs.settledBody": "Toată lumea e chit.",
@@ -429,7 +453,7 @@ const ro: Record<MessageKey, string> = {
 
   "extra.title": "Adaugă un extra",
   "extra.what": "Ce a fost?",
-  "extra.whatPlaceholder": "Bere, apă, mingi…",
+  "extra.whatPlaceholder": "Mingi, grip, băuturi…",
   "extra.cost": "Cost",
   "extra.billedTo": "Pe nota cui",
   "extra.billedHint": "Se împarte egal între cei aleși — nu între toată sesiunea.",
