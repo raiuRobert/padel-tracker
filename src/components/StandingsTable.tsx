@@ -11,16 +11,13 @@ import { useFlipList } from "./useFlipList";
  * carrying the meaning was the easiest thing on the row to misread, and it changed per language. A
  * tick and a cross need no translating and the colour does most of the work at a glance.
  */
-function Tally({
-  kind,
-  count,
-  label,
-}: {
-  kind: "win" | "loss";
-  count: number;
-  label: string;
-}) {
+function Tally({ kind, count }: { kind: "win" | "loss"; count: number }) {
+  const { n } = useI18n();
   const win = kind === "win";
+  // Fully worded and correctly counted, so the tooltip and the screen reader both read "1 victorie"
+  // rather than the number and a bare plural noun stuck together.
+  const label = n(kind, count);
+
   return (
     <span
       title={label}
@@ -40,9 +37,9 @@ function Tally({
       >
         {win ? <path d="M4 12.5 9.5 18 20 6.5" /> : <path d="M6 6l12 12M18 6L6 18" />}
       </svg>
-      {count}
-      {/* The letter is gone from the visual, so the meaning has to reach a screen reader some way. */}
-      <span className="sr-only"> {label}</span>
+      {/* The number carries the meaning visually; the label carries it for everyone else. */}
+      <span aria-hidden>{count}</span>
+      <span className="sr-only">{label}</span>
     </span>
   );
 }
@@ -63,7 +60,7 @@ export function StandingsTable({
   rows: readonly StandingsRow[];
   nameOf: (id: string) => string;
 }) {
-  const { t } = useI18n();
+  const { n } = useI18n();
   const listRef = useFlipList<HTMLOListElement>();
   const leader = rows[0]?.points ?? 0;
 
@@ -91,11 +88,11 @@ export function StandingsTable({
             <div className="min-w-0 flex-1">
               <p className="truncate text-base font-bold tracking-tight">{nameOf(row.playerId)}</p>
               <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
-                <Tally kind="win" count={row.points} label={t("standings.wins")} />
-                <Tally kind="loss" count={row.losses} label={t("standings.losses")} />
+                <Tally kind="win" count={row.points} />
+                <Tally kind="loss" count={row.losses} />
                 <span className="text-muted tabular-nums">
-                  {t("standings.played", { count: row.roundsPlayed })}
-                  {row.sitOuts > 0 ? ` · ${t("standings.satOut")} ${row.sitOuts}` : ""}
+                  {n("roundsPlayed", row.roundsPlayed)}
+                  {row.sitOuts > 0 ? ` · ${n("sitOut", row.sitOuts)}` : ""}
                 </span>
               </div>
               {/* A bar makes the gap at the top of the table legible at a glance. */}

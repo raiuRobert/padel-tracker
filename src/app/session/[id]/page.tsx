@@ -181,7 +181,7 @@ export default function SessionPlayPage() {
       ) : session.status === "finished" ? (
         <section className="mb-9">
           <EmptyState title={t("play.finishedTitle")}>
-            {t("play.finishedBody", { rounds: n("round", played.length) })}
+            {t("play.finishedBody", { rounds: n("roundsPlayed", played.length) })}
           </EmptyState>
         </section>
       ) : null}

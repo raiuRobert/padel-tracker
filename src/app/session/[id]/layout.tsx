@@ -72,7 +72,7 @@ export default function SessionLayout({ children }: { children: ReactNode }) {
           <div className="flex shrink-0 flex-col items-end gap-2">
             <Badge tone={session.status === "active" ? "accent" : "muted"}>
               {session.status === "active"
-                ? t("home.roundsIn", { count: n("round", scoredRoundCount(session)) })
+                ? n("roundsPlayed", scoredRoundCount(session))
                 : t("session.finished")}
             </Badge>
             <ShareButton sessionId={session.id} />

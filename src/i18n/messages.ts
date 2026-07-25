@@ -35,7 +35,6 @@ const en = {
   "home.subtitle": "Fair rotations, live scores, an honest split.",
   "home.inProgress": "In progress",
   "home.continue": "Continue session",
-  "home.roundsIn": "{count} in",
   "home.readyTitle": "Ready to play",
   "home.readyBody": "Pick who turned up, how many courts you have, and how you want to rotate.",
   "home.start": "Start a session",
@@ -72,13 +71,12 @@ const en = {
   "roster.rename": "Rename",
   "roster.renameLabel": "Rename {name}",
   "roster.removeLabel": "Remove {name}",
-  "roster.archived": "archived",
   "roster.needMore": "Add {players} more to start a session.",
   "roster.readyToPlay": "{players} — enough to start a session.",
   "roster.clearAll": "Remove all",
   "roster.confirmClearAllTitle": "Remove all players?",
   "roster.confirmClearAll":
-    "Remove all {count} players from the roster and from every saved group?\n\nAnyone who has played a session is kept as archived, so past results still show their name.",
+    "Remove {players} from the roster and from every saved group?\n\nAnyone who has played a session is kept as archived, so past results still show their name.",
   "roster.archivedSection": "Archived",
   "roster.archivedHint":
     "Removed from the roster but kept so past sessions still show their names. They aren't offered when starting a session.",
@@ -104,14 +102,12 @@ const en = {
   "setup.goodToGo": "{players} on {courts} — good to go.",
   "setup.configOption": "{players} on {courts}",
   "setup.sevenPlayers": "Seven is the awkward one — play 6 or 8, or add a stand-in.",
-  "setup.unsupported": "{count} players doesn't fit a court setup we can rotate fairly. Supported: {options}.",
+  // Phrased so the count is the object, not the subject: no verb has to agree with it, which is what
+  // made "1 players doesn't fit" possible in the first place.
+  "setup.unsupported": "There's no fair rotation for {players}. Supported: {options}.",
   "setup.pairs": "Opening pairs",
   "setup.pairsHint":
     "Tap two players to pair them. These are the partnerships the first round starts from; after that everyone rotates.",
-  "setup.pairsRemaining": "Pick {count} more to complete the pairs.",
-  "setup.pairsDone": "All four pairs set.",
-  "setup.pairLabel": "Pair {number}",
-  "setup.clearPairs": "Clear pairs",
   "setup.format": "Format",
   "setup.mode": "Rotation mode",
   "setup.americano": "Americano",
@@ -148,7 +144,6 @@ const en = {
   "share.copied": "Copied!",
   "share.shareVia": "Share…",
   "share.close": "Close",
-  "share.offline": "Live sharing isn't set up in this build.",
   "session.finished": "Finished",
   "session.notFoundTitle": "Session not found",
   "session.notFoundBody": "It may have been deleted, or stored in a different browser.",
@@ -174,7 +169,7 @@ const en = {
   "play.reopenSession": "Reopen session",
   "play.reopenHint": "Puts another round on the board so you can carry on playing.",
   "play.finishedTitle": "Session finished",
-  "play.finishedBody": "{rounds} played. The standings and cost split are final.",
+  "play.finishedBody": "{rounds}. The standings and cost split are final.",
   "play.winnerLabel": "{team} won",
 
   "standings.after": "After {rounds}",
@@ -183,10 +178,6 @@ const en = {
   "standings.noScoresBody": "Play a round and tap the winner — the leaderboard fills in from there.",
   // Wins and losses are shown as a ✓/✕ chip rather than a letter, so they read the same in every
   // language. These labels exist for screen readers and tooltips.
-  "standings.played": "{count} played",
-  "standings.wins": "wins",
-  "standings.losses": "losses",
-  "standings.satOut": "sat out",
   "standings.allTimeTitle": "All-time",
   "standings.allTimeSubtitle": "Every game won, added up.",
   "standings.everyone": "Everyone",
@@ -265,7 +256,6 @@ const ro: Record<MessageKey, string> = {
   "home.subtitle": "Rotații corecte, scor pe loc, împărțire cinstită.",
   "home.inProgress": "În desfășurare",
   "home.continue": "Continuă sesiunea",
-  "home.roundsIn": "{count} jucate",
   "home.readyTitle": "Gata de joc",
   "home.readyBody": "Alege cine a venit, câte terenuri aveți și cum vreți să rotiți.",
   "home.start": "Începe o sesiune",
@@ -303,13 +293,12 @@ const ro: Record<MessageKey, string> = {
   "roster.rename": "Redenumește",
   "roster.renameLabel": "Redenumește {name}",
   "roster.removeLabel": "Elimină {name}",
-  "roster.archived": "arhivat",
   "roster.needMore": "Adaugă încă {players} ca să poți începe o sesiune.",
   "roster.readyToPlay": "{players} — destui pentru o sesiune.",
   "roster.clearAll": "Elimină toți",
   "roster.confirmClearAllTitle": "Elimini toți jucătorii?",
   "roster.confirmClearAll":
-    "Elimini toți cei {count} jucători din listă și din grupurile salvate?\n\nCine a jucat deja o sesiune rămâne arhivat, ca rezultatele vechi să-i păstreze numele.",
+    "Elimini {players} din listă și din grupurile salvate?\n\nCine a jucat deja o sesiune rămâne arhivat, ca rezultatele vechi să-i păstreze numele.",
   "roster.archivedSection": "Arhivați",
   "roster.archivedHint":
     "Eliminați din listă, dar păstrați ca sesiunile vechi să le arate numele. Nu apar când începi o sesiune nouă.",
@@ -336,14 +325,10 @@ const ro: Record<MessageKey, string> = {
   "setup.configOption": "{players} pe {courts}",
   "setup.sevenPlayers": "Șapte e numărul incomod — jucați 6 sau 8, ori mai găsiți pe cineva.",
   "setup.unsupported":
-    "{count} jucători nu încap într-o formulă pe care o putem roti corect. Se poate juca: {options}.",
+    "Nu există o rotație corectă pentru {players}. Se poate juca: {options}.",
   "setup.pairs": "Perechile de start",
   "setup.pairsHint":
     "Atinge doi jucători ca să-i faci pereche. De la aceste perechi pornește prima rundă; după aceea toată lumea se rotește.",
-  "setup.pairsRemaining": "Mai alege {count} ca să completezi perechile.",
-  "setup.pairsDone": "Toate cele patru perechi sunt stabilite.",
-  "setup.pairLabel": "Perechea {number}",
-  "setup.clearPairs": "Șterge perechile",
   "setup.format": "Format",
   "setup.mode": "Mod de rotație",
   "setup.americano": "Americano",
@@ -380,7 +365,6 @@ const ro: Record<MessageKey, string> = {
   "share.copied": "Copiat!",
   "share.shareVia": "Trimite…",
   "share.close": "Închide",
-  "share.offline": "Partajarea live nu e configurată în acest build.",
   "session.finished": "Încheiată",
   "session.notFoundTitle": "Sesiunea nu a fost găsită",
   "session.notFoundBody": "Poate a fost ștearsă sau e salvată în alt browser.",
@@ -406,17 +390,13 @@ const ro: Record<MessageKey, string> = {
   "play.reopenSession": "Redeschide sesiunea",
   "play.reopenHint": "Adaugă o rundă nouă ca să continuați jocul.",
   "play.finishedTitle": "Sesiune încheiată",
-  "play.finishedBody": "{rounds} jucate. Clasamentul și împărțirea costurilor sunt finale.",
+  "play.finishedBody": "{rounds}. Clasamentul și împărțirea costurilor sunt finale.",
   "play.winnerLabel": "{team} a câștigat",
 
   "standings.after": "După {rounds}",
   "standings.points": "puncte",
   "standings.noScoresTitle": "Niciun rezultat încă",
   "standings.noScoresBody": "Jucați o rundă și apăsați câștigătorul — clasamentul se completează singur.",
-  "standings.played": "{count} jucate",
-  "standings.wins": "victorii",
-  "standings.losses": "înfrângeri",
-  "standings.satOut": "pauze",
   "standings.allTimeTitle": "Clasament general",
   "standings.allTimeSubtitle": "Toate jocurile câștigate, adunate.",
   "standings.everyone": "Toți",
@@ -489,6 +469,19 @@ const enPlurals = {
   hour: { one: "1 hour", other: "{count} hours" },
   rotation: { one: "1 rotation", other: "{count} rotations" },
   session: { one: "1 session", other: "{count} sessions" },
+  /**
+   * Phrases where a word *outside* the noun also has to agree with the count carry the whole phrase
+   * here rather than being assembled from a pluralised noun plus a fixed word. Romanian inflects the
+   * participle — "1 rundă jucată" but "3 runde jucate" — so gluing a constant "jucate" onto a
+   * correctly pluralised "1 rundă" still produces broken grammar.
+   */
+  roundsPlayed: { one: "1 round played", other: "{count} rounds played" },
+  sitOut: { one: "1 sat out", other: "{count} sat out" },
+  // The standings chips show a bare number next to a tick or cross; these are what a screen reader
+  // and the tooltip get instead. Counted, so they belong here rather than being a bare noun a
+  // component sticks a number in front of — that's how "1 losses" happened.
+  win: { one: "1 win", other: "{count} wins" },
+  loss: { one: "1 loss", other: "{count} losses" },
 } as const;
 
 export type PluralKey = keyof typeof enPlurals;
@@ -500,6 +493,11 @@ const roPlurals: Record<PluralKey, PluralForms> = {
   hour: { one: "1 oră", few: "{count} ore", other: "{count} de ore" },
   rotation: { one: "1 rotație", few: "{count} rotații", other: "{count} de rotații" },
   session: { one: "1 sesiune", few: "{count} sesiuni", other: "{count} de sesiuni" },
+  // "rundă" is feminine, so the participle follows it: jucată / jucate.
+  roundsPlayed: { one: "1 rundă jucată", few: "{count} runde jucate", other: "{count} de runde jucate" },
+  sitOut: { one: "1 pauză", few: "{count} pauze", other: "{count} de pauze" },
+  win: { one: "1 victorie", few: "{count} victorii", other: "{count} de victorii" },
+  loss: { one: "1 înfrângere", few: "{count} înfrângeri", other: "{count} de înfrângeri" },
 };
 
 export const plurals: Record<Locale, Record<PluralKey, PluralForms>> = { en: enPlurals, ro: roPlurals };

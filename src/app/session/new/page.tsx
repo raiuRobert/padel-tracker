@@ -83,7 +83,7 @@ export default function NewSessionPage() {
     const options = SUPPORTED_CONFIGURATIONS.map((c) =>
       t("setup.configOption", { players: n("player", c.players), courts: n("court", c.courts) }),
     ).join(", ");
-    return t("setup.unsupported", { count: selected.length, options });
+    return t("setup.unsupported", { players: n("player", selected.length), options });
   }, [selected.length, valid, courts, t, n]);
 
   if (!ready) return <Loading label={t("common.loading")} />;

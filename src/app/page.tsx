@@ -33,7 +33,7 @@ export default function HomePage() {
                   </p>
                 </div>
                 <Badge tone="accent">
-                  {t("home.roundsIn", { count: n("round", scoredRoundCount(active)) })}
+                  {n("roundsPlayed", scoredRoundCount(active))}
                 </Badge>
               </div>
               <ButtonLink href={`/session/${active.id}`} className="mt-5 w-full">

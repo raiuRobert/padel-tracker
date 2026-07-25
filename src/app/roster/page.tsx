@@ -97,7 +97,7 @@ function RowAction({
 export default function RosterPage() {
   const { ready, players, activePlayers, addPlayer, renamePlayer, removePlayer, removeAllPlayers } =
     useData();
-  const { t } = useI18n();
+  const { t, n } = useI18n();
   const confirm = useConfirm();
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -220,7 +220,7 @@ export default function RosterPage() {
                 onClick={async () => {
                   const ok = await confirm({
                     title: t("roster.confirmClearAllTitle"),
-                    message: t("roster.confirmClearAll", { count: activePlayers.length }),
+                    message: t("roster.confirmClearAll", { players: n("player", activePlayers.length) }),
                     confirmLabel: t("roster.clearAll"),
                   });
                   if (ok) await removeAllPlayers();
