@@ -43,11 +43,14 @@ function TeamButton({
   names,
   side,
   won,
+  settled,
   onPick,
 }: {
   names: readonly string[];
   side: Side;
   won: boolean;
+  /** True once either team on this court has been picked. */
+  settled: boolean;
   onPick: () => void;
 }) {
   const { t } = useI18n();
@@ -62,21 +65,37 @@ function TeamButton({
       onClick={onPick}
       // `pop-in` is applied with the won state, so picking a winner replays the squash every time —
       // including when you change your mind, which is exactly when you want the confirmation.
+      //
+      // The team that didn't win fades once a choice exists. It stays fully tappable — changing your
+      // mind is one press — but the result reads at a glance instead of both sides looking equally
+      // live.
       className={`flex min-h-16 w-full items-center justify-between gap-3 rounded-lg px-4 text-left
-                  font-bold transition-[color,background-color,transform] duration-200 ease-out-quart
-                  active:scale-[0.98] ${won ? `${styles.won} pop-in` : styles.idle}`}
+                  font-bold transition-[color,background-color,transform,opacity] duration-200
+                  ease-out-quart active:scale-[0.98] ${
+                    won ? `${styles.won} pop-in` : `${styles.idle} ${settled ? "opacity-45" : ""}`
+                  }`}
     >
-      <span className="text-base leading-tight tracking-tight">{label}</span>
-      {won ? (
-        <span aria-hidden className="badge-in eyebrow shrink-0 rounded bg-canvas/25 px-1.5 py-1">
-          {t("play.won")}
-        </span>
-      ) : (
-        // Kept in the layout so declaring a winner doesn't shift the name beside it.
-        <span aria-hidden className="eyebrow shrink-0 px-1.5 py-1 opacity-0">
-          {t("play.won")}
-        </span>
-      )}
+      <span className="min-w-0 flex-1 truncate text-base leading-tight tracking-tight">{label}</span>
+      {/*
+        A tick rather than the word "won": the fill already says which team took it, so the word was
+        repeating it at the cost of the widest element in the row. A fixed narrow slot also means
+        declaring a winner can't reflow the names beside it.
+      */}
+      <span aria-hidden className="grid size-5 shrink-0 place-items-center">
+        {won ? (
+          <svg
+            viewBox="0 0 24 24"
+            className="badge-in size-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M4 12.5 9.5 18 20 6.5" />
+          </svg>
+        ) : null}
+      </span>
     </button>
   );
 }
@@ -153,37 +172,50 @@ export function RoundBoard({
     // The play screen keys this on the round index, so a saved round remounts the board and the
     // next one lifts in — the session visibly moves on rather than the contents swapping silently.
     <Card className="rise-in p-4">
-      {round.sittingOut.length > 0 ? (
-        <p className="mb-4 rounded-lg bg-raised px-3 py-2.5 text-sm">
-          <span className="eyebrow mr-2 text-muted">{t("play.sittingOut")}</span>
-          <span className="font-semibold">{round.sittingOut.map(nameOf).join(", ")}</span>
-        </p>
-      ) : null}
-
-      <p className="eyebrow mb-3 text-muted">{t("play.tapWinner")}</p>
+      {/*
+        The instruction and who's off share one quiet line. They were two stacked bands, one of them
+        filled, which gave the least important thing on the card the most weight and pushed the teams
+        — the only part you actually touch — down the screen.
+      */}
+      <p className="mb-3 px-0.5 text-xs leading-relaxed text-muted">
+        {t("play.tapWinner")}
+        {round.sittingOut.length > 0 ? (
+          <>
+            <span className="px-1.5 opacity-50">·</span>
+            <span className="font-semibold text-ink">
+              {t("play.benchList", { names: round.sittingOut.map(nameOf).join(", ") })}
+            </span>
+          </>
+        ) : null}
+      </p>
 
       <div className="space-y-5">
-        {round.matches.map((match) => (
-          <div key={match.court}>
-            {courts > 1 ? (
-              <p className="eyebrow mb-2 text-muted">{t("play.court", { number: match.court })}</p>
-            ) : null}
-            <div className="space-y-1.5">
-              <TeamButton
-                names={match.teamA.map(nameOf)}
-                side="A"
-                won={winners[match.court] === "A"}
-                onPick={() => setWinners((current) => ({ ...current, [match.court]: "A" }))}
-              />
-              <TeamButton
-                names={match.teamB.map(nameOf)}
-                side="B"
-                won={winners[match.court] === "B"}
-                onPick={() => setWinners((current) => ({ ...current, [match.court]: "B" }))}
-              />
+        {round.matches.map((match) => {
+          const settled = winners[match.court] !== undefined;
+          return (
+            <div key={match.court}>
+              {courts > 1 ? (
+                <p className="eyebrow mb-2 text-muted">{t("play.court", { number: match.court })}</p>
+              ) : null}
+              <div className="space-y-1.5">
+                <TeamButton
+                  names={match.teamA.map(nameOf)}
+                  side="A"
+                  won={winners[match.court] === "A"}
+                  settled={settled}
+                  onPick={() => setWinners((current) => ({ ...current, [match.court]: "A" }))}
+                />
+                <TeamButton
+                  names={match.teamB.map(nameOf)}
+                  side="B"
+                  won={winners[match.court] === "B"}
+                  settled={settled}
+                  onPick={() => setWinners((current) => ({ ...current, [match.court]: "B" }))}
+                />
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <Button className="mt-5 w-full" disabled={!complete || saving} onClick={() => void save()}>

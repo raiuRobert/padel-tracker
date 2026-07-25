@@ -233,7 +233,7 @@ export default function SessionPlayPage() {
                   ))}
                   {round.sittingOut.length > 0 ? (
                     <p className="mt-2 text-xs text-muted">
-                      {t("play.satOut", { names: round.sittingOut.map(playerName).join(", ") })}
+                      {t("play.benchList", { names: round.sittingOut.map(playerName).join(", ") })}
                     </p>
                   ) : null}
                 </Card>
