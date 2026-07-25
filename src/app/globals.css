@@ -19,6 +19,155 @@
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /**
+   * Motion tokens.
+   *
+   * `back-out` overshoots slightly past its target before settling — that overshoot is what makes a
+   * tap feel physical rather than mechanical, so it's the curve for anything the thumb causes
+   * directly. `out-quart` and `out-expo` decelerate hard without overshooting: right for things
+   * that arrive on their own (a round appearing, a friend's score landing) where a bounce would
+   * read as a glitch rather than as feedback.
+   */
+  --ease-back-out: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/**
+ * Keyframes. Everything animates transform and opacity only — both run on the compositor, so they
+ * stay smooth on the mid-range phone this actually gets used on.
+ */
+
+/* Entrance for list items and cards: a short lift into place. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Dialogs: settle in from slightly small and low. */
+@keyframes spring-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Confirmation of a tap: a quick squash past the target and back. */
+@keyframes pop {
+  0% {
+    transform: scale(0.97);
+  }
+  55% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* A number that just changed. Draws the eye without moving the layout. */
+@keyframes bump {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.28);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* The bottom-nav indicator arriving on the tab you just moved to. */
+@keyframes tab-in {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* The winner badge arriving. */
+@keyframes badge-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/**
+ * Staggered entrance. Set `--stagger` to the item's index and each one lifts in just behind the
+ * last — the trick anime.js is built around. `backwards` keeps an item invisible during its delay
+ * instead of flashing at full opacity first.
+ */
+@utility rise-in {
+  animation: rise 400ms var(--ease-out-quart) backwards;
+  animation-delay: calc(var(--stagger, 0) * 45ms);
+}
+
+@utility spring-in {
+  animation: spring-in 380ms var(--ease-back-out) backwards;
+}
+
+@utility fade-in {
+  animation: fade-in 220ms ease-out backwards;
+}
+
+@utility pop-in {
+  animation: pop 320ms var(--ease-back-out);
+}
+
+@utility bump-in {
+  animation: bump 420ms var(--ease-back-out);
+}
+
+@utility badge-in {
+  animation: badge-in 300ms var(--ease-back-out) backwards;
+}
+
+@utility tab-in {
+  animation: tab-in 280ms var(--ease-out-quart);
+}
+
+/**
+ * The standings bars grow from empty on first paint as well as animating between values. Plain CSS
+ * rather than a utility so `@starting-style` can target the same class; where it isn't supported the
+ * bar simply starts at its final width, which is no loss.
+ */
+.bar-grow {
+  transform-origin: left;
+  transition: transform 560ms var(--ease-out-quart);
+}
+
+@starting-style {
+  .bar-grow {
+    transform: scaleX(0);
+  }
 }
 
 /**
@@ -75,5 +224,12 @@ input[type="number"] {
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+    /*
+     * Delays have to go too, not just durations. The staggered entrances hold an item at opacity 0
+     * until its delay elapses, so leaving the delays in place would blank the list for a moment for
+     * exactly the people who asked for less movement.
+     */
+    animation-delay: 0ms !important;
+    transition-delay: 0ms !important;
   }
 }

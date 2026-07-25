@@ -104,8 +104,12 @@ export default function SessionCostsPage() {
           <div className="space-y-1">
             {[...split.perPlayer]
               .sort((a, b) => b.totalCents - a.totalCents)
-              .map((player) => (
-                <Card key={player.playerId} className="p-4">
+              .map((player, index) => (
+                <Card
+                  key={player.playerId}
+                  style={{ "--stagger": index } as React.CSSProperties}
+                  className="rise-in p-4"
+                >
                   <div className="flex items-baseline justify-between gap-3">
                     <p className="truncate font-bold tracking-tight">{playerName(player.playerId)}</p>
                     <p className="score-figure text-xl">{cash(player.totalCents)}</p>
@@ -185,7 +189,11 @@ export default function SessionCostsPage() {
         ) : (
           <div className="space-y-1">
             {split.settlements.map((settlement, index) => (
-              <Card key={index} className="flex items-center justify-between gap-3 p-4 text-sm">
+              <Card
+                key={index}
+                style={{ "--stagger": index } as React.CSSProperties}
+                className="rise-in flex items-center justify-between gap-3 p-4 text-sm"
+              >
                 <span className="min-w-0 truncate">
                   <span className="font-bold">{playerName(settlement.from)}</span>
                   <span className="mx-1.5 text-muted">{t("costs.owes")}</span>

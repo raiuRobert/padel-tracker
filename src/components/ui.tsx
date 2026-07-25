@@ -7,16 +7,23 @@ import type { ComponentProps, ReactNode } from "react";
  * sized for a thumb — 44px minimum targets, no hover-only affordances.
  */
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+// `soft` is a positive action that isn't the screen's primary one — accent-coloured so its intent is
+// obvious, but tinted rather than filled so it never competes with the solid accent button.
+type ButtonVariant = "primary" | "secondary" | "soft" | "ghost" | "danger";
 
+// `active:scale` gives the press somewhere to go. It's the cheapest possible touch feedback and on
+// a phone it's the difference between a button and a picture of a button.
 const BUTTON_BASE =
   "inline-flex min-h-12 items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold " +
-  "uppercase tracking-wide transition-colors disabled:cursor-not-allowed disabled:opacity-35 " +
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+  "uppercase tracking-wide transition-[color,background-color,transform] duration-150 " +
+  "ease-out-quart active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-35 " +
+  "disabled:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 " +
+  "focus-visible:outline-accent";
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   primary: "bg-accent text-accent-ink hover:bg-accent/90 active:bg-accent/80",
   secondary: "bg-raised text-ink hover:bg-line",
+  soft: "bg-accent/12 text-accent hover:bg-accent/20",
   ghost: "text-muted hover:text-ink hover:bg-raised",
   danger: "bg-transparent text-danger hover:bg-danger/10",
 };
@@ -103,9 +110,10 @@ export function ChoiceGroup<T extends string | number>({
             type="button"
             aria-pressed={selected}
             onClick={() => onChange(option.value)}
-            className={`min-h-12 rounded-lg px-2 py-2 text-sm font-bold transition-colors ${
-              selected ? "bg-accent text-accent-ink" : "bg-raised text-muted hover:text-ink"
-            }`}
+            className={`min-h-12 rounded-lg px-2 py-2 text-sm font-bold transition-[color,background-color,transform]
+                        duration-150 ease-out-quart active:scale-[0.97] ${
+                          selected ? "bg-accent text-accent-ink" : "bg-raised text-muted hover:text-ink"
+                        }`}
           >
             <span className="block">{option.label}</span>
             {option.sublabel ? (
@@ -130,7 +138,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-dashed border-line px-6 py-10 text-center">
+    <div className="rise-in rounded-xl border border-dashed border-line px-6 py-10 text-center">
       <p className="text-base font-bold tracking-tight text-ink">{title}</p>
       {children ? <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-muted">{children}</p> : null}
       {action ? <div className="mt-6 flex justify-center">{action}</div> : null}

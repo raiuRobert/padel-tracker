@@ -76,9 +76,12 @@ export default function HomePage() {
           <EmptyState title={t("home.noFinishedTitle")}>{t("home.noFinishedBody")}</EmptyState>
         ) : (
           <div className="space-y-1">
-            {recent.map((session) => (
+            {recent.map((session, index) => (
               <Link key={session.id} href={`/session/${session.id}`} className="block">
-                <Card className="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-raised">
+                <Card
+                  style={{ "--stagger": index } as React.CSSProperties}
+                  className="rise-in flex items-center justify-between gap-3 p-4 transition-colors hover:bg-raised"
+                >
                   <div className="min-w-0">
                     <p className="font-bold tracking-tight">{formatDate(session.date)}</p>
                     <p className="mt-0.5 text-sm text-muted">

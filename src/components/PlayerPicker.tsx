@@ -37,7 +37,8 @@ export function PlayerPicker({
               disabled={isDisabled}
               onClick={() => onToggle(player.id)}
               className={`flex min-h-12 w-full items-center gap-2 rounded-lg px-3 text-left text-sm
-                          font-bold transition-colors disabled:opacity-30 ${
+                          font-bold transition-[color,background-color,transform] duration-150
+                          ease-out-quart active:scale-[0.97] disabled:opacity-30 disabled:active:scale-100 ${
                             isSelected ? "bg-accent text-accent-ink" : "bg-raised text-ink"
                           }`}
             >

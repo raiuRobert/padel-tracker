@@ -81,7 +81,7 @@ function ShareSheet({ sessionId, onClose }: { sessionId: string; onClose: () => 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-canvas/80 p-4 backdrop-blur-sm sm:items-center"
+      className="fade-in fixed inset-0 z-50 flex items-end justify-center bg-canvas/80 p-4 backdrop-blur-sm sm:items-center"
       role="dialog"
       aria-modal="true"
       aria-labelledby="share-title"
@@ -89,7 +89,7 @@ function ShareSheet({ sessionId, onClose }: { sessionId: string; onClose: () => 
         if (e.key === "Escape") onClose();
       }}
     >
-      <div className="w-full max-w-sm rounded-2xl bg-surface p-6 text-center shadow-2xl">
+      <div className="spring-in w-full max-w-sm rounded-2xl bg-surface p-6 text-center shadow-2xl">
         <div className="mb-4 flex items-start justify-between gap-3 text-left">
           <div>
             <h2 id="share-title" className="text-xl font-black tracking-tight text-ink">
@@ -108,7 +108,8 @@ function ShareSheet({ sessionId, onClose }: { sessionId: string; onClose: () => 
         </div>
 
         {qr ? (
-          <div className="mx-auto mb-2 w-fit rounded-2xl bg-white p-3">
+          // Generated asynchronously, so it springs in when it's ready rather than snapping in place.
+          <div className="spring-in mx-auto mb-2 w-fit rounded-2xl bg-white p-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={qr} alt={t("share.scan")} className="size-44" width={176} height={176} />
           </div>

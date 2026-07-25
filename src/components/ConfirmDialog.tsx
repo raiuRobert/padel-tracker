@@ -73,7 +73,7 @@ function Dialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-canvas/80 p-4 backdrop-blur-sm sm:items-center"
+      className="fade-in fixed inset-0 z-50 flex items-end justify-center bg-canvas/80 p-4 backdrop-blur-sm sm:items-center"
       role="alertdialog"
       aria-modal="true"
       aria-labelledby="confirm-title"
@@ -82,7 +82,7 @@ function Dialog({
         if (e.key === "Escape") onCancel();
       }}
     >
-      <div className="w-full max-w-sm rounded-2xl bg-surface p-6 shadow-2xl">
+      <div className="spring-in w-full max-w-sm rounded-2xl bg-surface p-6 shadow-2xl">
         <div className="mb-4 flex items-start gap-3">
           <span
             aria-hidden

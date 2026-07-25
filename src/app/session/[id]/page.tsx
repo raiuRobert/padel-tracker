@@ -14,6 +14,66 @@ import { buildNextRound, currentRound, isRoundScored, startsWithCourtSwap } from
 import type { MatchResult } from "@/lib/standings";
 import { useData } from "../../providers";
 
+/**
+ * Ending or resuming the session.
+ *
+ * Both actions used to be the same grey button, so the only thing telling you which one you were
+ * about to press was the label. They're opposites, so they now look like opposites: finishing is
+ * accent-tinted with a tick, because it's the natural end of the flow and reversible; reopening is
+ * neutral with a rewind, because it's undoing that. The hint line says what each one actually does,
+ * which is the part nobody could infer from a button that said "Finish session".
+ */
+function SessionControl({
+  status,
+  onChange,
+}: {
+  status: Session["status"];
+  onChange: (status: Session["status"]) => Promise<void>;
+}) {
+  const { t } = useI18n();
+  const active = status === "active";
+
+  return (
+    <section>
+      <SectionTitle>{t("play.sessionControl")}</SectionTitle>
+      <Card className="p-4">
+        <Button
+          variant={active ? "soft" : "secondary"}
+          className="w-full"
+          onClick={() => void onChange(active ? "finished" : "active")}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className="size-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.1"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            {active ? (
+              <>
+                <circle cx="12" cy="12" r="8.75" />
+                <path d="M8.2 12.4l2.6 2.6 5-5.4" />
+              </>
+            ) : (
+              <>
+                <path d="M3.6 11.2a8.6 8.6 0 1 1 2.3 7" />
+                <path d="M3.2 5.6v5.8h5.8" />
+              </>
+            )}
+          </svg>
+          {active ? t("play.finishSession") : t("play.reopenSession")}
+        </Button>
+        <p className="mt-3 text-center text-xs leading-relaxed text-muted">
+          {active ? t("play.finishHint") : t("play.reopenHint")}
+        </p>
+      </Card>
+    </section>
+  );
+}
+
 /** Called out because it's the one moment in the session where people physically move courts. */
 function CourtSwapNotice() {
   const { t } = useI18n();
@@ -148,7 +208,8 @@ export default function SessionPlayPage() {
                   </Button>
                 </div>
               ) : (
-                <Card key={round.index} className="p-4">
+                // Newest first, so a round that has just been scored lifts in at the top of the list.
+                <Card key={round.index} className="rise-in p-4">
                   <div className="mb-1.5 flex items-center justify-between">
                     <span className="eyebrow text-muted">
                       {t("play.round", { number: round.index + 1 })}
@@ -203,15 +264,7 @@ export default function SessionPlayPage() {
         </section>
       ) : null}
 
-      {session.status === "active" ? (
-        <Button variant="secondary" className="w-full" onClick={() => void setStatus("finished")}>
-          {t("play.finishSession")}
-        </Button>
-      ) : (
-        <Button variant="secondary" className="w-full" onClick={() => void setStatus("active")}>
-          {t("play.reopenSession")}
-        </Button>
-      )}
+      <SessionControl status={session.status} onChange={setStatus} />
     </>
   );
 }

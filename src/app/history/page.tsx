@@ -33,11 +33,15 @@ export default function HistoryPage() {
       <PageTitle title={t("history.title")} subtitle={n("session", sessions.length)} />
 
       <div className="space-y-1">
-        {sessions.map((session) => {
+        {sessions.map((session, index) => {
           const group = groups.find((g) => g.id === session.groupId);
           const date = formatDate(session.date);
           return (
-            <Card key={session.id} className="flex items-center gap-2 p-4">
+            <Card
+              key={session.id}
+              style={{ "--stagger": index } as React.CSSProperties}
+              className="rise-in flex items-center gap-2 p-4"
+            >
               <Link href={`/session/${session.id}`} className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <p className="truncate font-bold tracking-tight">{date}</p>

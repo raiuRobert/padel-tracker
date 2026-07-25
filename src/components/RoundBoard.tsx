@@ -60,16 +60,23 @@ function TeamButton({
       aria-pressed={won}
       aria-label={t("play.winnerLabel", { team: label })}
       onClick={onPick}
+      // `pop-in` is applied with the won state, so picking a winner replays the squash every time —
+      // including when you change your mind, which is exactly when you want the confirmation.
       className={`flex min-h-16 w-full items-center justify-between gap-3 rounded-lg px-4 text-left
-                  font-bold transition-colors ${won ? styles.won : styles.idle}`}
+                  font-bold transition-[color,background-color,transform] duration-200 ease-out-quart
+                  active:scale-[0.98] ${won ? `${styles.won} pop-in` : styles.idle}`}
     >
       <span className="text-base leading-tight tracking-tight">{label}</span>
-      <span
-        aria-hidden
-        className={`eyebrow shrink-0 rounded px-1.5 py-1 ${won ? "bg-canvas/25" : "opacity-0"}`}
-      >
-        {t("play.won")}
-      </span>
+      {won ? (
+        <span aria-hidden className="badge-in eyebrow shrink-0 rounded bg-canvas/25 px-1.5 py-1">
+          {t("play.won")}
+        </span>
+      ) : (
+        // Kept in the layout so declaring a winner doesn't shift the name beside it.
+        <span aria-hidden className="eyebrow shrink-0 px-1.5 py-1 opacity-0">
+          {t("play.won")}
+        </span>
+      )}
     </button>
   );
 }
@@ -100,7 +107,13 @@ export function MatchSummary({
       {courts > 1 ? <span className="eyebrow w-6 shrink-0 text-muted">C{match.court}</span> : null}
       <span className="flex min-w-0 flex-1 items-center gap-2">
         {line("A", match.teamA)}
-        <span className="shrink-0 text-xs text-muted">v</span>
+        {/*
+          A lowercase "v" between two names was nearly invisible against the team colours. Set as a
+          small chip it reads as a divider at a glance and gives the row a scoreboard cadence.
+        */}
+        <span className="shrink-0 rounded bg-raised px-1.5 py-0.5 text-[0.6rem] font-black tracking-widest text-muted">
+          VS
+        </span>
         {line("B", match.teamB)}
       </span>
     </div>
@@ -137,7 +150,9 @@ export function RoundBoard({
   }
 
   return (
-    <Card className="p-4">
+    // The play screen keys this on the round index, so a saved round remounts the board and the
+    // next one lifts in — the session visibly moves on rather than the contents swapping silently.
+    <Card className="rise-in p-4">
       {round.sittingOut.length > 0 ? (
         <p className="mb-4 rounded-lg bg-raised px-3 py-2.5 text-sm">
           <span className="eyebrow mr-2 text-muted">{t("play.sittingOut")}</span>

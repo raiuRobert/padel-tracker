@@ -2,11 +2,59 @@
 
 import { useI18n } from "@/i18n";
 import type { StandingsRow } from "@/lib/standings";
+import { useFlipList } from "./useFlipList";
+
+/**
+ * Wins and losses as a coloured tick/cross chip.
+ *
+ * These used to be a letter next to the number — "9V 5Î" in Romanian — which meant the one character
+ * carrying the meaning was the easiest thing on the row to misread, and it changed per language. A
+ * tick and a cross need no translating and the colour does most of the work at a glance.
+ */
+function Tally({
+  kind,
+  count,
+  label,
+}: {
+  kind: "win" | "loss";
+  count: number;
+  label: string;
+}) {
+  const win = kind === "win";
+  return (
+    <span
+      title={label}
+      className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-bold tabular-nums ${
+        win ? "bg-accent/15 text-accent" : "bg-danger/15 text-danger"
+      }`}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        className="size-3"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        {win ? <path d="M4 12.5 9.5 18 20 6.5" /> : <path d="M6 6l12 12M18 6L6 18" />}
+      </svg>
+      {count}
+      {/* The letter is gone from the visual, so the meaning has to reach a screen reader some way. */}
+      <span className="sr-only"> {label}</span>
+    </span>
+  );
+}
 
 /**
  * The leaderboard, read as a scoreboard: points are the loudest thing on the row and everything
  * else is supporting detail. A list rather than a table, because five numeric columns don't fit a
  * phone and only one of them ever gets argued about.
+ *
+ * Rows slide when the order changes and the points figure bumps when it ticks up, so a score
+ * arriving from someone else's phone is something you notice rather than something you'd have to
+ * diff against memory.
  */
 export function StandingsTable({
   rows,
@@ -16,16 +64,21 @@ export function StandingsTable({
   nameOf: (id: string) => string;
 }) {
   const { t } = useI18n();
+  const listRef = useFlipList<HTMLOListElement>();
   const leader = rows[0]?.points ?? 0;
 
   return (
-    <ol className="space-y-1">
+    <ol ref={listRef} className="space-y-1">
       {rows.map((row, index) => {
         const first = index === 0 && row.points > 0;
         return (
           <li
             key={row.playerId}
-            className={`flex items-center gap-3 rounded-lg px-3 py-3 ${first ? "bg-accent/10" : "bg-surface"}`}
+            data-flip-key={row.playerId}
+            style={{ "--stagger": index } as React.CSSProperties}
+            className={`rise-in flex items-center gap-3 rounded-lg px-3 py-3 transition-colors duration-300 ${
+              first ? "bg-accent/10" : "bg-surface"
+            }`}
           >
             <span
               className={`score-figure w-5 shrink-0 text-center text-sm ${
@@ -37,31 +90,30 @@ export function StandingsTable({
 
             <div className="min-w-0 flex-1">
               <p className="truncate text-base font-bold tracking-tight">{nameOf(row.playerId)}</p>
-              <p className="mt-1 text-xs text-muted tabular-nums">
-                {row.sitOuts > 0
-                  ? t("standings.recordWithSitOuts", {
-                      played: row.roundsPlayed,
-                      wins: row.points,
-                      losses: row.losses,
-                      sitOuts: row.sitOuts,
-                    })
-                  : t("standings.record", {
-                      played: row.roundsPlayed,
-                      wins: row.points,
-                      losses: row.losses,
-                    })}
-              </p>
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+                <Tally kind="win" count={row.points} label={t("standings.wins")} />
+                <Tally kind="loss" count={row.losses} label={t("standings.losses")} />
+                <span className="text-muted tabular-nums">
+                  {t("standings.played", { count: row.roundsPlayed })}
+                  {row.sitOuts > 0 ? ` · ${t("standings.satOut")} ${row.sitOuts}` : ""}
+                </span>
+              </div>
               {/* A bar makes the gap at the top of the table legible at a glance. */}
               <div className="mt-2 h-1 overflow-hidden rounded-full bg-raised" aria-hidden>
                 <div
-                  className={`h-full rounded-full ${first ? "bg-accent" : "bg-muted/50"}`}
-                  style={{ width: leader > 0 ? `${(row.points / leader) * 100}%` : "0%" }}
+                  className={`bar-grow h-full rounded-full ${first ? "bg-accent" : "bg-muted/50"}`}
+                  style={{ transform: `scaleX(${leader > 0 ? row.points / leader : 0})` }}
                 />
               </div>
             </div>
 
+            {/*
+              Keyed on the value so React swaps the element when the score changes, which replays
+              the bump. Cheaper and steadier than tracking the previous value in state.
+            */}
             <span
-              className={`score-figure shrink-0 text-3xl ${first ? "text-accent" : "text-ink"}`}
+              key={row.points}
+              className={`bump-in score-figure shrink-0 text-3xl ${first ? "text-accent" : "text-ink"}`}
             >
               {row.points}
             </span>

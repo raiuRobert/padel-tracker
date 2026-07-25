@@ -62,7 +62,7 @@ export function BottomNav() {
           return (
             <li key={tab.href} className="relative flex-1">
               {active ? (
-                <span aria-hidden className="absolute inset-x-5 top-0 h-0.5 rounded-full bg-accent" />
+                <span aria-hidden className="tab-in absolute inset-x-5 top-0 h-0.5 rounded-full bg-accent" />
               ) : null}
               <Link
                 href={tab.href}
@@ -73,7 +73,9 @@ export function BottomNav() {
               >
                 <svg
                   viewBox="0 0 24 24"
-                  className="size-[22px]"
+                  className={`size-[22px] transition-transform duration-300 ease-back-out ${
+                    active ? "scale-110" : "scale-100"
+                  }`}
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1.7"

@@ -45,7 +45,7 @@ export function WelcomeDialog() {
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-end justify-center bg-canvas/80 p-4 backdrop-blur-sm sm:items-center"
+      className="fade-in fixed inset-0 z-40 flex items-end justify-center bg-canvas/80 p-4 backdrop-blur-sm sm:items-center"
       role="dialog"
       aria-modal="true"
       aria-labelledby="welcome-title"
@@ -53,7 +53,7 @@ export function WelcomeDialog() {
         if (e.key === "Escape") dismiss();
       }}
     >
-      <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-2xl">
+      <div className="spring-in w-full max-w-md rounded-2xl bg-surface p-6 shadow-2xl">
         <div className="mb-5 flex items-start justify-between gap-3">
           <h2 id="welcome-title" className="text-2xl font-black tracking-tighter text-ink">
             {t("welcome.title")}
@@ -70,10 +70,11 @@ export function WelcomeDialog() {
 
         <p className="mb-5 text-sm text-muted">{t("welcome.intro")}</p>
 
+        {/* Staggered so the three points read one after another instead of landing as a wall of text. */}
         <ul className="space-y-4">
-          <Point icon="rotations" title="welcome.rotationsTitle" body="welcome.rotationsBody" />
-          <Point icon="scores" title="welcome.scoresTitle" body="welcome.scoresBody" />
-          <Point icon="costs" title="welcome.costsTitle" body="welcome.costsBody" />
+          <Point step={2} icon="rotations" title="welcome.rotationsTitle" body="welcome.rotationsBody" />
+          <Point step={3} icon="scores" title="welcome.scoresTitle" body="welcome.scoresBody" />
+          <Point step={4} icon="costs" title="welcome.costsTitle" body="welcome.costsBody" />
         </ul>
 
         <p className="mt-6 text-sm text-muted">{t("welcome.footer")}</p>
@@ -112,10 +113,21 @@ const ICONS: Record<string, ReactNode> = {
   ),
 };
 
-function Point({ icon, title, body }: { icon: string; title: MessageKey; body: MessageKey }) {
+function Point({
+  step,
+  icon,
+  title,
+  body,
+}: {
+  /** Position in the stagger, offset so the points follow the dialog's own entrance. */
+  step: number;
+  icon: string;
+  title: MessageKey;
+  body: MessageKey;
+}) {
   const { t } = useI18n();
   return (
-    <li className="flex gap-3.5">
+    <li className="rise-in flex gap-3.5" style={{ "--stagger": step } as React.CSSProperties}>
       <span
         aria-hidden
         className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent/15 text-accent"
