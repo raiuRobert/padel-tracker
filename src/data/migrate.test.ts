@@ -55,6 +55,21 @@ describe("migrateSession", () => {
     expect(migrated.currency).toBe("EUR");
   });
 
+  it("drops a payer who isn't in the session", () => {
+    // Setup used to keep the chosen payer after they were dropped from the line-up, storing a
+    // session that names a payer it doesn't contain. Splitting the cost of one throws, which took
+    // down every screen that totals sessions up — so the stored session gets repaired on the way in.
+    const orphaned = { ...legacySession([{ court: 1, winner: "A" }]), paidBy: "someone-else" } as Session;
+    const migrated = migrateSession(orphaned);
+    expect(migrated.paidBy).toBeUndefined();
+    expect("paidBy" in migrated).toBe(false);
+  });
+
+  it("keeps a payer who is in the session", () => {
+    const valid = { ...legacySession([{ court: 1, winner: "A" }]), paidBy: "ana" } as Session;
+    expect(migrateSession(valid).paidBy).toBe("ana");
+  });
+
   it("gives a participant-less session an empty snapshot", () => {
     const migrated = migrateSession(legacySession([{ court: 1, winner: "A" }]));
     expect(migrated.participants).toEqual([]);

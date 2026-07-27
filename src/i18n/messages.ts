@@ -48,6 +48,12 @@ const en = {
 
   // The introductory guide. Six short sections rather than one screen of bullets: the rotation
   // modes and the cost split are the parts newcomers don't guess, and they need a little room.
+  "error.title": "Something broke",
+  "error.body":
+    "That screen couldn't be drawn. Your sessions are stored on this device and haven't been touched, so trying again is safe.",
+  "error.retry": "Try again",
+  "error.home": "Back to start",
+
   "guide.open": "Guide",
   "guide.close": "Close",
   "guide.skip": "Skip",
@@ -297,6 +303,12 @@ const ro: Record<MessageKey, string> = {
   "home.noFinishedTitle": "Nicio sesiune încheiată",
   "home.noFinishedBody":
     "După ce închei o sesiune apare aici, cu clasamentul final și cine cât are de plătit.",
+
+  "error.title": "Ceva s-a stricat",
+  "error.body":
+    "Ecranul nu a putut fi afișat. Sesiunile tale sunt salvate pe acest dispozitiv și nu au fost atinse, deci poți încerca din nou fără grijă.",
+  "error.retry": "Încearcă din nou",
+  "error.home": "Înapoi la început",
 
   "guide.open": "Ghid",
   "guide.close": "Închide",

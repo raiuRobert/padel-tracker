@@ -46,10 +46,23 @@ export function migrateSession(session: Session): Session {
   // still resolves their names, so an empty snapshot is enough to bring the shape up to date.
   const needsParticipants = raw.participants === undefined;
 
+  /**
+   * A payer who isn't playing.
+   *
+   * Session setup used to keep the chosen payer even if that player was then dropped from the
+   * line-up, so some stored sessions name a payer they don't contain. The cost split refuses to
+   * work with one — correctly, since there's no share to charge them — but it's a stored session,
+   * so refusing means every screen that totals it up throws, including the home page. Forgetting
+   * who paid is recoverable in a way that a crash isn't: the session then simply has no payer, and
+   * one can be set again on the costs screen.
+   */
+  const payerMissing = raw.paidBy !== undefined && !(session.playerIds ?? []).includes(raw.paidBy);
+
   const changed =
     raw.gamesToWin !== undefined ||
     needsCurrency ||
     needsParticipants ||
+    payerMissing ||
     rounds.some((round, i) => round.results.length !== session.rounds[i].results.length) ||
     rounds.some((round, i) =>
       round.results.some((result, j) => result.winner !== session.rounds[i].results[j]?.winner),
@@ -64,5 +77,6 @@ export function migrateSession(session: Session): Session {
     participants: raw.participants ?? [],
   };
   delete migrated.gamesToWin;
+  if (payerMissing) delete (migrated as { paidBy?: string }).paidBy;
   return migrated;
 }

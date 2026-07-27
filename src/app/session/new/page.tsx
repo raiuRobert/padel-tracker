@@ -62,9 +62,14 @@ export default function NewSessionPage() {
   /**
    * The supported setups pin the court count to the head count, so it follows the selection rather
    * than letting someone build an invalid session and only find out at the end.
+   *
+   * Whoever is down as having paid has to be someone who's playing. Picking a payer and *then*
+   * dropping them from the line-up used to leave the id behind, which stored a session naming a
+   * payer it didn't contain — and the cost split rightly refuses to work with one of those.
    */
   function selectPlayers(next: string[]) {
     setSelected(next);
+    if (paidBy && !next.includes(paidBy)) setPaidBy("");
     const implied = COURTS_FOR_PLAYERS[next.length];
     if (implied && implied !== courts) changeCourts(implied);
   }
