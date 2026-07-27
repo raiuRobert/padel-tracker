@@ -46,20 +46,48 @@ const en = {
   "home.noFinishedTitle": "No finished sessions yet",
   "home.noFinishedBody": "Once you wrap up a session it shows here, with the final standings and who owes what.",
 
-  "welcome.title": "Welcome to Padel Tracker",
-  "welcome.intro": "A courtside app for social padel. Three things it does:",
-  "welcome.rotationsTitle": "Fair rotations",
-  "welcome.rotationsBody":
-    "Works out who partners and plays against whom — 4 to 8 players, 1 or 2 courts — as evenly as possible.",
-  "welcome.scoresTitle": "Live scores",
-  "welcome.scoresBody": "Tap the winning team after each round and see who's on top.",
-  "welcome.costsTitle": "Fair cost split",
-  "welcome.costsBody":
-    "Splits the court fee by how long each person actually played, plus whatever they grabbed from the fridge.",
-  "welcome.footer": "No account, works offline. Start by adding your players.",
-  "welcome.addPlayers": "Add players",
-  "welcome.dismiss": "Maybe later",
-  "welcome.close": "Close",
+  // The introductory guide. Six short sections rather than one screen of bullets: the rotation
+  // modes and the cost split are the parts newcomers don't guess, and they need a little room.
+  "guide.open": "Guide",
+  "guide.close": "Close",
+  "guide.skip": "Skip",
+  "guide.back": "Back",
+  "guide.next": "Next",
+  "guide.finish": "Add players",
+  "guide.step": "{current} of {total}",
+
+  "guide.welcomeTitle": "Welcome to Padel Tracker",
+  "guide.welcomeBody": "A courtside app for social padel. Here's the whole thing in about a minute.",
+  "guide.welcomeRotations": "Works out who partners whom, as evenly as possible.",
+  "guide.welcomeScores": "Keeps the score with one tap a round.",
+  "guide.welcomeCosts": "Splits the bill by how much each person actually played.",
+
+  "guide.playersTitle": "Start with your players",
+  "guide.playersBody":
+    "Add everyone who plays — you only do this once, and it stays on your phone. Save the regulars as a group and starting a session takes two taps.",
+  "guide.playersNote": "You need at least four players to start.",
+
+  "guide.rotationTitle": "Two ways to rotate",
+  "guide.rotationBody": "Pick one when you start a session. Both share the sit-outs fairly.",
+  "guide.rotationAmericano": "Americano",
+  "guide.rotationAmericanoBody": "The schedule is fixed up front. Everyone partners with everyone.",
+  "guide.rotationMexicano": "Mexicano",
+  "guide.rotationMexicanoBody": "Pairs are rebuilt each round from the standings, so games stay close.",
+
+  "guide.scoringTitle": "Tap the team that won",
+  "guide.scoringBody":
+    "There's no game score to keep. Tap the winning team, save the round, and every player on that side gets a point.",
+  "guide.scoringNote": "Tapped the wrong one? Tap the other and save again.",
+
+  "guide.costsTitle": "Split the bill honestly",
+  "guide.costsBody":
+    "Enter what the court costs per hour. Everyone pays for the rotations they actually played, so arriving late or leaving early costs less.",
+  "guide.costsNote": "Balls, a grip or a round of drinks go on the tab of whoever had them.",
+
+  "guide.shareTitle": "Everyone can keep score",
+  "guide.shareBody":
+    "Share the session with a link or QR code. Whoever opens it joins the same session and can enter results — every phone updates at once.",
+  "guide.shareNote": "No accounts. The link is the invitation.",
 
   "roster.title": "Roster",
   "roster.subtitle": "Everyone who plays, plus the groups you start sessions from.",
@@ -270,20 +298,47 @@ const ro: Record<MessageKey, string> = {
   "home.noFinishedBody":
     "După ce închei o sesiune apare aici, cu clasamentul final și cine cât are de plătit.",
 
-  "welcome.title": "Bine ai venit la Padel Tracker",
-  "welcome.intro": "O aplicație de teren pentru padel între prieteni. Trei lucruri pe care le face:",
-  "welcome.rotationsTitle": "Rotații corecte",
-  "welcome.rotationsBody":
-    "Stabilește cine cu cine face pereche și împotriva cui joacă — de la 4 la 8 jucători, 1 sau 2 terenuri — cât mai echilibrat.",
-  "welcome.scoresTitle": "Scor pe loc",
-  "welcome.scoresBody": "Apeși echipa câștigătoare după fiecare rundă și vezi cine e în frunte.",
-  "welcome.costsTitle": "Împărțire cinstită",
-  "welcome.costsBody":
-    "Împarte costul terenului după cât a jucat fiecare, plus ce a mai luat de la frigider.",
-  "welcome.footer": "Fără cont, merge offline. Începe prin a adăuga jucătorii.",
-  "welcome.addPlayers": "Adaugă jucători",
-  "welcome.dismiss": "Poate mai târziu",
-  "welcome.close": "Închide",
+  "guide.open": "Ghid",
+  "guide.close": "Închide",
+  "guide.skip": "Sari peste",
+  "guide.back": "Înapoi",
+  "guide.next": "Continuă",
+  "guide.finish": "Adaugă jucători",
+  "guide.step": "{current} din {total}",
+
+  "guide.welcomeTitle": "Bine ai venit la Padel Tracker",
+  "guide.welcomeBody": "O aplicație de teren pentru padel între prieteni. Pe scurt, într-un minut.",
+  "guide.welcomeRotations": "Stabilește cine cu cine face pereche, cât mai echilibrat.",
+  "guide.welcomeScores": "Ține scorul cu o singură atingere pe rundă.",
+  "guide.welcomeCosts": "Împarte nota după cât a jucat fiecare.",
+
+  "guide.playersTitle": "Începe cu jucătorii",
+  "guide.playersBody":
+    "Adaugă pe toți cei care joacă — o faci o singură dată și rămân pe telefonul tău. Salvează gașca obișnuită ca grup și pornești o sesiune din două atingeri.",
+  "guide.playersNote": "Ai nevoie de cel puțin patru jucători ca să începi.",
+
+  "guide.rotationTitle": "Două moduri de rotație",
+  "guide.rotationBody": "Alegi unul când începi sesiunea. Ambele împart pauzele corect.",
+  "guide.rotationAmericano": "Americano",
+  "guide.rotationAmericanoBody": "Programul e stabilit de la început. Fiecare joacă cu fiecare.",
+  "guide.rotationMexicano": "Mexicano",
+  "guide.rotationMexicanoBody":
+    "Perechile se refac în fiecare rundă după clasament, ca meciurile să fie strânse.",
+
+  "guide.scoringTitle": "Apasă echipa care a câștigat",
+  "guide.scoringBody":
+    "Nu ții scor pe game-uri. Apeși echipa câștigătoare, salvezi runda, și fiecare jucător din acea echipă primește un punct.",
+  "guide.scoringNote": "Ai apăsat greșit? Apeși cealaltă echipă și salvezi din nou.",
+
+  "guide.costsTitle": "Împarte nota cinstit",
+  "guide.costsBody":
+    "Introdu cât costă terenul pe oră. Fiecare plătește rotațiile pe care chiar le-a jucat, deci dacă vii mai târziu sau pleci mai devreme plătești mai puțin.",
+  "guide.costsNote": "Mingile, un grip sau un rând de băuturi ajung pe nota cui le-a luat.",
+
+  "guide.shareTitle": "Toți pot ține scorul",
+  "guide.shareBody":
+    "Partajează sesiunea cu un link sau cod QR. Cine îl deschide intră pe aceeași sesiune și poate introduce rezultate — pe toate telefoanele se actualizează deodată.",
+  "guide.shareNote": "Fără conturi. Linkul e invitația.",
 
   "roster.title": "Jucători",
   "roster.subtitle": "Toți cei care joacă, plus grupurile din care pornești sesiunile.",

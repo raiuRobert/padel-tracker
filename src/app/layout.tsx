@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { BottomNav } from "@/components/BottomNav";
 import { ConfirmProvider } from "@/components/ConfirmDialog";
+import { GuideButton, GuideProvider } from "@/components/Guide";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
-import { WelcomeDialog } from "@/components/WelcomeDialog";
 import { I18nProvider } from "@/i18n";
 import { DataProvider } from "./providers";
 import "./globals.css";
@@ -39,15 +39,17 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <I18nProvider>
           <DataProvider>
             <ConfirmProvider>
-              <div className="mx-auto w-full max-w-lg px-4">
-                <div className="flex justify-end pt-3">
-                  <LanguageToggle />
+              <GuideProvider>
+                <div className="mx-auto w-full max-w-lg px-4">
+                  <div className="flex items-center justify-end gap-1 pt-3">
+                    <GuideButton />
+                    <LanguageToggle />
+                  </div>
+                  <main className="pt-3 pb-4">{children}</main>
                 </div>
-                <main className="pt-3 pb-4">{children}</main>
-              </div>
-              <BottomNav />
-              <WelcomeDialog />
-              <ServiceWorkerRegistration />
+                <BottomNav />
+                <ServiceWorkerRegistration />
+              </GuideProvider>
             </ConfirmProvider>
           </DataProvider>
         </I18nProvider>
