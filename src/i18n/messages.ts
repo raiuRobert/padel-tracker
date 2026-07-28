@@ -87,7 +87,7 @@ const en = {
 
   "guide.costsTitle": "Split the bill honestly",
   "guide.costsBody":
-    "Enter what the court costs per hour. Everyone pays for the rotations they actually played, so arriving late or leaving early costs less.",
+    "Enter what the court costs per hour, then pick how to divide it: by the rotations each person played, so arriving late costs less, or equally between everyone.",
   "guide.costsNote": "Balls, a grip or a round of drinks go on the tab of whoever had them.",
 
   "guide.shareTitle": "Everyone can keep score",
@@ -159,6 +159,11 @@ const en = {
   "setup.courtNPricePerHour": "Court {number} price/hour",
   "setup.hours": "Hours",
   "setup.currency": "Currency",
+  "setup.courtSplit": "Split the court fee",
+  "setup.splitByTime": "By time played",
+  "setup.splitEven": "Evenly",
+  "setup.splitByTimeHint": "Everyone pays for the rotations they played, so arriving late or leaving early costs less.",
+  "setup.splitEvenHint": "The court fee is divided equally, however much anyone played.",
   "setup.whoPaid": "Who paid for the court?",
   "setup.paidHint": "Optional — used to work out who owes whom.",
   "setup.start": "Start session",
@@ -233,9 +238,9 @@ const en = {
   "costs.perPlayer": "Per player",
   "costs.courtPlusExtras": "court + extras",
   "costs.courtLine": "Court · {rotations}",
+  "costs.courtEvenLine": "Court · split evenly",
   "costs.noCostTitle": "No cost entered yet",
-  "costs.noCostBody":
-    "Add what the court cost and everyone's share is worked out from the rotations they played.",
+  "costs.noCostBody": "Add what the court cost and everyone's share is worked out from there.",
   "costs.addCourtCost": "Add the court cost",
   "costs.noExtrasTitle": "Nothing extra yet",
   "costs.noExtrasBody":
@@ -344,7 +349,7 @@ const ro: Record<MessageKey, string> = {
 
   "guide.costsTitle": "Împarte nota cinstit",
   "guide.costsBody":
-    "Introdu cât costă terenul pe oră. Fiecare plătește rotațiile pe care chiar le-a jucat, deci dacă vii mai târziu sau pleci mai devreme plătești mai puțin.",
+    "Introdu cât costă terenul pe oră, apoi alege cum se împarte: după rotațiile jucate de fiecare, ca să plătească mai puțin cine vine mai târziu, sau egal între toți.",
   "guide.costsNote": "Mingile, un grip sau un rând de băuturi ajung pe nota cui le-a luat.",
 
   "guide.shareTitle": "Toți pot ține scorul",
@@ -415,6 +420,12 @@ const ro: Record<MessageKey, string> = {
   "setup.courtNPricePerHour": "Preț/oră teren {number}",
   "setup.hours": "Ore",
   "setup.currency": "Monedă",
+  "setup.courtSplit": "Împărțirea costului terenului",
+  "setup.splitByTime": "După timpul jucat",
+  "setup.splitEven": "În mod egal",
+  "setup.splitByTimeHint":
+    "Fiecare plătește rotațiile pe care le-a jucat, deci dacă vii mai târziu sau pleci mai devreme plătești mai puțin.",
+  "setup.splitEvenHint": "Costul terenului se împarte egal, indiferent cât a jucat fiecare.",
   "setup.whoPaid": "Cine a plătit terenul?",
   "setup.paidHint": "Opțional — se folosește ca să știm cine cui îi datorează.",
   "setup.start": "Începe sesiunea",
@@ -486,9 +497,9 @@ const ro: Record<MessageKey, string> = {
   "costs.perPlayer": "Pe jucător",
   "costs.courtPlusExtras": "teren + extra",
   "costs.courtLine": "Teren · {rotations}",
+  "costs.courtEvenLine": "Teren · împărțit egal",
   "costs.noCostTitle": "Niciun cost introdus",
-  "costs.noCostBody":
-    "Adaugă cât a costat terenul, iar partea fiecăruia se calculează din rotațiile jucate.",
+  "costs.noCostBody": "Adaugă cât a costat terenul, iar partea fiecăruia se calculează de acolo.",
   "costs.addCourtCost": "Adaugă costul terenului",
   "costs.noExtrasTitle": "Niciun extra încă",
   "costs.noExtrasBody":

@@ -1,5 +1,6 @@
 import type { Session } from "@/lib/domain";
 import type { MatchResult } from "@/lib/standings";
+import { migrateSession } from "./migrate";
 import { getSupabase } from "./supabase";
 
 /**
@@ -14,8 +15,13 @@ import { getSupabase } from "./supabase";
 /** The stored row: id is a column, everything else is the session document. */
 type SessionData = Omit<Session, "id">;
 
+/**
+ * Documents arrive from whatever build the device that wrote them is running, which can be an older
+ * one than this — a friend who hasn't reloaded the app in a while. Same treatment as a session read
+ * off this device's own storage: bring it up to the current shape rather than trusting it.
+ */
 function toSession(id: string, data: SessionData): Session {
-  return { ...data, id };
+  return migrateSession({ ...data, id });
 }
 
 /**

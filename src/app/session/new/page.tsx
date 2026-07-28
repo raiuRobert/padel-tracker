@@ -18,7 +18,7 @@ import {
   Select,
 } from "@/components/ui";
 import { useI18n } from "@/i18n";
-import { courtCostCents, toCents } from "@/lib/cost";
+import { courtCostCents, DEFAULT_COURT_SPLIT, toCents, type CourtSplit } from "@/lib/cost";
 import { CURRENCIES, currencySymbol } from "@/lib/currency";
 import { DEFAULT_HOURS, type NewSession } from "@/lib/domain";
 import { formatPair, todayIso } from "@/lib/format";
@@ -47,6 +47,7 @@ export default function NewSessionPage() {
   const [mode, setMode] = useState<RotationMode>("americano");
   const [bookings, setBookings] = useState<BookingDraft[]>([{ rate: "", hours: String(DEFAULT_HOURS) }]);
   const [paidBy, setPaidBy] = useState("");
+  const [courtSplit, setCourtSplit] = useState<CourtSplit>(DEFAULT_COURT_SPLIT);
   const [saving, setSaving] = useState(false);
 
   /** Courts and bookings move together: two courts means two prices to enter. */
@@ -147,6 +148,7 @@ export default function NewSessionPage() {
         hours: Math.max(...parsedBookings.map((b) => b.hours)),
         bookings: parsedBookings,
         currency,
+        courtSplit,
         paidBy: paidBy || undefined,
       };
       const session = await startSession(input);
@@ -292,6 +294,20 @@ export default function NewSessionPage() {
               </Field>
             </div>
           ))}
+
+          <Field
+            label={t("setup.courtSplit")}
+            hint={courtSplit === "even" ? t("setup.splitEvenHint") : t("setup.splitByTimeHint")}
+          >
+            <ChoiceGroup
+              value={courtSplit}
+              options={[
+                { value: "rotations" as const, label: t("setup.splitByTime") },
+                { value: "even" as const, label: t("setup.splitEven") },
+              ]}
+              onChange={setCourtSplit}
+            />
+          </Field>
 
           <Field label={t("setup.whoPaid")} hint={t("setup.paidHint")}>
             <Select value={paidBy} onChange={(e) => setPaidBy(e.target.value)}>

@@ -142,6 +142,62 @@ describe("court cost", () => {
   });
 });
 
+describe("an even court split", () => {
+  /** Someone who played half as much as everyone else — the case the two rules disagree on. */
+  const uneven = [
+    { playerId: "ana", roundsPlayed: 8 },
+    { playerId: "ben", roundsPlayed: 8 },
+    { playerId: "cleo", roundsPlayed: 8 },
+    { playerId: "dan", roundsPlayed: 4 },
+  ];
+
+  it("charges everyone the same however much they played", () => {
+    const split = splitCosts(baseline({ participation: uneven, courtSplit: "even" }));
+    expect(split.perPlayer.map((p) => p.courtShareCents)).toEqual([1050, 1050, 1050, 1050]);
+  });
+
+  it("still charges someone who never made it onto court", () => {
+    const split = splitCosts(
+      baseline({
+        courtSplit: "even",
+        participation: [...players.slice(0, 3).map((playerId) => ({ playerId, roundsPlayed: 6 })), {
+          playerId: "dan",
+          roundsPlayed: 0,
+        }],
+      }),
+    );
+    expect(split.perPlayer.find((p) => p.playerId === "dan")!.courtShareCents).toBe(1050);
+  });
+
+  it("splits by time played when no rule is given, so old sessions bill as they always did", () => {
+    const byDefault = splitCosts(baseline({ participation: uneven }));
+    const explicit = splitCosts(baseline({ participation: uneven, courtSplit: "rotations" }));
+    expect(byDefault.perPlayer).toEqual(explicit.perPlayer);
+    expect(byDefault.perPlayer.map((p) => p.courtShareCents)).toEqual([1200, 1200, 1200, 600]);
+  });
+
+  it("leaves extras billed to whoever had them", () => {
+    const split = splitCosts(
+      baseline({
+        courtSplit: "even",
+        participation: uneven,
+        extras: [{ id: "x1", description: "Beer", costCents: 350, billedTo: ["ben"] }],
+      }),
+    );
+    expect(totalsByPlayer(split)).toEqual({ ana: 1050, ben: 1400, cleo: 1050, dan: 1050 });
+  });
+
+  it("always has the shares add up to exactly the bill", () => {
+    for (const costCents of [1, 999, 4200, 4201, 7777, 12345]) {
+      const split = splitCosts(baseline({ bookings: [{ court: 1, costCents, hours: 2 }], courtSplit: "even" }));
+      expect(
+        split.perPlayer.reduce((sum, p) => sum + p.courtShareCents, 0),
+        `${costCents}c split evenly`,
+      ).toBe(costCents);
+    }
+  });
+});
+
 describe("extras", () => {
   it("bills an extra to the one person who had it", () => {
     const split = splitCosts(

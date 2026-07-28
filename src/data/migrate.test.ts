@@ -55,6 +55,15 @@ describe("migrateSession", () => {
     expect(migrated.currency).toBe("EUR");
   });
 
+  it("splits a session predating the choice by rotations, as it was billed at the time", () => {
+    expect(migrateSession(legacySession([{ court: 1, winner: "A" }])).courtSplit).toBe("rotations");
+  });
+
+  it("leaves a session that was set to split evenly splitting evenly", () => {
+    const even = { ...legacySession([{ court: 1, winner: "A" }]), courtSplit: "even" } as Session;
+    expect(migrateSession(even).courtSplit).toBe("even");
+  });
+
   it("drops a payer who isn't in the session", () => {
     // Setup used to keep the chosen payer after they were dropped from the line-up, storing a
     // session that names a payer it doesn't contain. Splitting the cost of one throws, which took
@@ -85,6 +94,7 @@ describe("migrateSession", () => {
     const current: Session = {
       ...legacySession([{ court: 1, winner: "B" }]),
       currency: "EUR",
+      courtSplit: "rotations",
       participants: [],
     } as Session;
     delete (current as Session & { gamesToWin?: number }).gamesToWin;

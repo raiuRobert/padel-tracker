@@ -36,6 +36,7 @@ function session(overrides: Partial<Session> = {}): Session {
     hours: 2,
     bookings: [{ court: 1, costCents: 4200, hours: 2, ratePerHourCents: 2100 }],
     currency: "EUR",
+    courtSplit: "rotations",
     rounds: [],
     extras: [],
     status: "active",

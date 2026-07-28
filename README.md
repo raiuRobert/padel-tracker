@@ -5,9 +5,9 @@ A courtside web app for groups of friends who play social padel. It solves three
 1. **Fair rotations.** With 4, 5, 6, or 8 players across 1 or 2 courts, work out who partners with
    whom, who plays against whom, and who sits out — as evenly as possible.
 2. **Score tracking.** Tap the winning team after each round and see who won the most games.
-3. **Fair cost splitting.** Split the court fee in proportion to how much each person actually
-   played, not an equal split — plus anything bought along the way: balls, a grip, a borrowed
-   racket, drinks from the fridge.
+3. **Fair cost splitting.** Split the court fee by how much each person actually played, or equally
+   between everyone — plus anything bought along the way: balls, a grip, a borrowed racket, drinks
+   from the fridge.
 
 No login. Everything lives in the browser (IndexedDB) and works offline once loaded. Available in
 English and Romanian. Optionally, sessions sync live across devices (see *Live sync* below), so
@@ -90,9 +90,13 @@ on fewest losses.
 ## Cost splitting
 
 The court fee is entered as a **price per hour** (per court, so two courts booked for different
-lengths or rates each get their own), and the total is the rate times the hours. Each player's
-share is proportional to the number of rotations they actually played — arrive late or leave early
-and you pay less. On top of that, **extras** are billed to one specific player or split across a
+lengths or rates each get their own), and the total is the rate times the hours. How that total is
+divided is up to the group: **by time played**, where each share is proportional to the rotations
+that player was actually on court for — arrive late or leave early and you pay less — or **evenly**,
+the same share each however much anyone played. The choice is made when the session is set up and
+can be changed afterwards on the costs screen; it's stored per session, so past sessions keep the
+arrangement they were settled under. On top of that, **extras** are billed to one specific player
+or split across a
 chosen subset, not necessarily everyone in the session. An extra is anything bought during the
 session: a tube of balls, a grip, a racket someone borrowed, a round of drinks.
 
@@ -205,9 +209,12 @@ Decisions made without asking, noted here so they're easy to revisit:
 - **Session length is a free number input**, defaulting to 2 hours — not a fixed 2/3/4 dropdown.
 - **A game has no score, only a winner.** Tapping the winning team gives each of its players a
   point; there's no games-to-win setting.
-- **Cost is split by rotations played**, which is the proxy for time on court. It assumes rotations
-  are roughly equal length, which they are in practice. Only *scored* rotations count — an
-  Americano schedule exists before it's played, and nobody should be billed for a fixture.
+- **Rotations played are the proxy for time on court**, when the court fee is split that way. It
+  assumes rotations are roughly equal length, which they are in practice. Only *scored* rotations
+  count — an Americano schedule exists before it's played, and nobody should be billed for a
+  fixture. An even split ignores all of this by design: everyone booked the court together.
+- **Splitting by time played stays the default**, including for sessions stored before the choice
+  existed. Changing what a past session's bill says would be the wrong kind of surprise.
 - **The court fee is pooled across both courts** rather than charging each court to the four people
   on it. It's one group settling one bill.
 - **Money is handled in integer cents** and split by largest remainder, so shares always add up to

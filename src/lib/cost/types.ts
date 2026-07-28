@@ -23,6 +23,18 @@ export interface CourtBooking {
   readonly ratePerHourCents?: number;
 }
 
+/**
+ * How the court fee gets divided.
+ *
+ * `rotations` charges for time on court, so arriving late or leaving early costs less. `even` gives
+ * everyone the same share regardless — the usual arrangement when a group books a court together
+ * and doesn't want to itemise who sat out a round. Extras are unaffected either way: they're always
+ * billed to the people who had them.
+ */
+export type CourtSplit = "rotations" | "even";
+
+export const DEFAULT_COURT_SPLIT: CourtSplit = "rotations";
+
 /** How much of the session a player was actually present for. */
 export interface PlayerParticipation {
   readonly playerId: PlayerId;
@@ -50,7 +62,7 @@ export interface ExtraShare {
 export interface PlayerCostBreakdown {
   readonly playerId: PlayerId;
   readonly roundsPlayed: number;
-  /** Their slice of the court fee, proportional to rounds played. */
+  /** Their slice of the court fee, by rounds played or split evenly — see `CourtSplit`. */
   readonly courtShareCents: number;
   readonly extrasCents: number;
   /** Itemised so the summary can show *why* the extras total is what it is. */

@@ -1,3 +1,4 @@
+import { DEFAULT_COURT_SPLIT } from "@/lib/cost";
 import { DEFAULT_CURRENCY } from "@/lib/currency";
 import type { Session } from "@/lib/domain";
 
@@ -45,6 +46,9 @@ export function migrateSession(session: Session): Session {
   // Sessions predating shared links have no participant snapshot; on this device the local roster
   // still resolves their names, so an empty snapshot is enough to bring the shape up to date.
   const needsParticipants = raw.participants === undefined;
+  // Sessions predating the choice were all split by time on court, and changing what a past
+  // session's bill says after the fact would be the wrong kind of surprise.
+  const needsCourtSplit = raw.courtSplit === undefined;
 
   /**
    * A payer who isn't playing.
@@ -62,6 +66,7 @@ export function migrateSession(session: Session): Session {
     raw.gamesToWin !== undefined ||
     needsCurrency ||
     needsParticipants ||
+    needsCourtSplit ||
     payerMissing ||
     rounds.some((round, i) => round.results.length !== session.rounds[i].results.length) ||
     rounds.some((round, i) =>
@@ -74,6 +79,7 @@ export function migrateSession(session: Session): Session {
     ...raw,
     rounds,
     currency: raw.currency ?? DEFAULT_CURRENCY,
+    courtSplit: raw.courtSplit ?? DEFAULT_COURT_SPLIT,
     participants: raw.participants ?? [],
   };
   delete migrated.gamesToWin;

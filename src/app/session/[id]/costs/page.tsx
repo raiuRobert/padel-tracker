@@ -3,9 +3,9 @@
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { ExtraForm } from "@/components/ExtraForm";
-import { Button, Card, EmptyState, Field, Input, SectionTitle, Select } from "@/components/ui";
+import { Button, Card, ChoiceGroup, EmptyState, Field, Input, SectionTitle, Select } from "@/components/ui";
 import { useI18n } from "@/i18n";
-import { courtCostCents, ratePerHourCents, toCents, type Extra } from "@/lib/cost";
+import { courtCostCents, ratePerHourCents, toCents, type CourtSplit, type Extra } from "@/lib/cost";
 import { CURRENCIES, currencySymbol } from "@/lib/currency";
 import { centsToInput } from "@/lib/format";
 import { sessionCostSplit } from "@/lib/session";
@@ -116,7 +116,11 @@ export default function SessionCostsPage() {
                   </div>
                   <dl className="mt-2.5 space-y-1 text-sm text-muted">
                     <div className="flex justify-between gap-3">
-                      <dt>{t("costs.courtLine", { rotations: n("rotation", player.roundsPlayed) })}</dt>
+                      <dt>
+                        {session.courtSplit === "even"
+                          ? t("costs.courtEvenLine")
+                          : t("costs.courtLine", { rotations: n("rotation", player.roundsPlayed) })}
+                      </dt>
                       <dd className="tabular-nums">{cash(player.courtShareCents)}</dd>
                     </div>
                     {player.extras.map((extra) => (
@@ -222,6 +226,7 @@ function CostEditor({ sessionId, onDone }: { sessionId: string; onDone: () => vo
     }),
   );
   const [paidBy, setPaidBy] = useState(session.paidBy ?? "");
+  const [courtSplit, setCourtSplit] = useState<CourtSplit>(session.courtSplit);
 
   async function save() {
     const parsed = bookings.map((booking, index) => {
@@ -233,6 +238,7 @@ function CostEditor({ sessionId, onDone }: { sessionId: string; onDone: () => vo
       bookings: parsed,
       hours: Math.max(...parsed.map((b) => b.hours)),
       currency,
+      courtSplit,
       paidBy: paidBy || undefined,
     });
     onDone();
@@ -291,6 +297,20 @@ function CostEditor({ sessionId, onDone }: { sessionId: string; onDone: () => vo
           </Field>
         </div>
       ))}
+
+      <Field
+        label={t("setup.courtSplit")}
+        hint={courtSplit === "even" ? t("setup.splitEvenHint") : t("setup.splitByTimeHint")}
+      >
+        <ChoiceGroup
+          value={courtSplit}
+          options={[
+            { value: "rotations" as const, label: t("setup.splitByTime") },
+            { value: "even" as const, label: t("setup.splitEven") },
+          ]}
+          onChange={setCourtSplit}
+        />
+      </Field>
 
       <Field label={t("costs.whoFronted")}>
         <Select value={paidBy} onChange={(e) => setPaidBy(e.target.value)}>

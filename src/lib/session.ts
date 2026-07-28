@@ -81,5 +81,6 @@ export function sessionCostSplit(session: Session): CostSplit {
     participation: sessionParticipation(session),
     extras: session.extras,
     paidBy: session.paidBy,
+    courtSplit: session.courtSplit,
   });
 }

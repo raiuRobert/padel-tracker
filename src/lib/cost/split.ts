@@ -2,8 +2,10 @@ import type { PlayerId } from "../rotation/types";
 import { allocate, settle, type Balance } from "./money";
 import {
   CostSplitError,
+  DEFAULT_COURT_SPLIT,
   type CostSplit,
   type CourtBooking,
+  type CourtSplit,
   type Extra,
   type ExtraShare,
   type PlayerCostBreakdown,
@@ -19,6 +21,8 @@ export interface CostSplitOptions {
   readonly extras?: readonly Extra[];
   /** Who fronted the court fee, and by default the extras too. */
   readonly paidBy?: PlayerId;
+  /** How to divide the court fee. Defaults to charging for time on court. */
+  readonly courtSplit?: CourtSplit;
 }
 
 function assertKnownPlayer(playerId: PlayerId, known: ReadonlySet<PlayerId>, context: string): void {
@@ -73,16 +77,24 @@ function validate(options: CostSplitOptions, known: ReadonlySet<PlayerId>): void
 /**
  * Works out who owes what.
  *
- * The court fee is pooled across all booked courts and split in proportion to rotations played, so
- * arriving late or leaving early costs you less. Extras are billed only to the people who actually
- * had them. The two are reported separately so the summary can show why a total is what it is.
+ * The court fee is pooled across all booked courts and then divided by `courtSplit`: in proportion
+ * to rotations played, or equally between everyone. Extras are billed only to the people who
+ * actually had them, whichever rule is in force. Court fee and extras are reported separately so
+ * the summary can show why a total is what it is.
  *
  * Pooling the court fee — rather than charging each court to the four people on it — is deliberate:
  * it's one group settling one bill, and a group shouldn't pay more because their court happened to
  * be booked for longer.
  */
 export function splitCosts(options: CostSplitOptions): CostSplit {
-  const { players, bookings, participation, extras = [], paidBy } = options;
+  const {
+    players,
+    bookings,
+    participation,
+    extras = [],
+    paidBy,
+    courtSplit = DEFAULT_COURT_SPLIT,
+  } = options;
   const known = new Set(players);
   validate(options, known);
 
@@ -94,9 +106,11 @@ export function splitCosts(options: CostSplitOptions): CostSplit {
   const courtCostCents = bookings.reduce((sum, booking) => sum + booking.costCents, 0);
   const totalHours = bookings.reduce((sum, booking) => sum + booking.hours, 0);
 
+  // An even split weights everyone the same, so someone who sat out a round — or the whole
+  // evening — still pays their quarter of the booking.
   const courtShares = allocate(
     courtCostCents,
-    players.map((id) => roundsByPlayer.get(id)!),
+    players.map((id) => (courtSplit === "even" ? 1 : roundsByPlayer.get(id)!)),
   );
 
   // Each extra is split evenly between exactly the people it was billed to.
