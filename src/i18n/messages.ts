@@ -66,7 +66,7 @@ const en = {
   "guide.welcomeBody": "A courtside app for social padel. Here's the whole thing in about a minute.",
   "guide.welcomeRotations": "Works out who partners whom, as evenly as possible.",
   "guide.welcomeScores": "Keeps the score with one tap a round.",
-  "guide.welcomeCosts": "Splits the bill by how much each person actually played.",
+  "guide.welcomeCosts": "Splits the bill by time played, or evenly — your call.",
 
   "guide.playersTitle": "Start with your players",
   "guide.playersBody":
@@ -327,7 +327,7 @@ const ro: Record<MessageKey, string> = {
   "guide.welcomeBody": "O aplicație de teren pentru padel între prieteni. Pe scurt, într-un minut.",
   "guide.welcomeRotations": "Stabilește cine cu cine face pereche, cât mai echilibrat.",
   "guide.welcomeScores": "Ține scorul cu o singură atingere pe rundă.",
-  "guide.welcomeCosts": "Împarte nota după cât a jucat fiecare.",
+  "guide.welcomeCosts": "Împarte nota după timpul jucat, sau egal — cum vrei.",
 
   "guide.playersTitle": "Începe cu jucătorii",
   "guide.playersBody":
