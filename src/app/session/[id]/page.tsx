@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ExtraForm } from "@/components/ExtraForm";
+import { PlayedRounds } from "@/components/PlayedRounds";
 import { MatchSummary, RoundBoard } from "@/components/RoundBoard";
 import { Button, Card, EmptyState, SectionTitle } from "@/components/ui";
 import { useI18n } from "@/i18n";
@@ -90,7 +91,6 @@ export default function SessionPlayPage() {
   const { sessions, playerName, patchSession, recordResults } = useData();
   const { t, n } = useI18n();
   const [addingExtra, setAddingExtra] = useState(false);
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const appending = useRef(false);
 
   const session = sessions.find((s) => s.id === id);
@@ -136,7 +136,6 @@ export default function SessionPlayPage() {
     // Goes through the conflict-free path so it merges with, rather than overwrites, a score a
     // friend may have just entered on the other court.
     await recordResults(session.id, round.index, results);
-    setEditingIndex(null);
   }
 
   async function addExtra(extra: Extra) {
@@ -195,57 +194,12 @@ export default function SessionPlayPage() {
       {played.length > 0 ? (
         <section className="mb-9">
           <SectionTitle>{t("play.played")}</SectionTitle>
-          <div className="space-y-1">
-            {[...played].reverse().map((round) =>
-              editingIndex === round.index ? (
-                <div key={round.index}>
-                  <p className="eyebrow mb-2 text-muted">
-                    {t("play.editingRound", { number: round.index + 1 })}
-                  </p>
-                  <RoundBoard
-                    round={round}
-                    courts={session.courts}
-                    nameOf={playerName}
-                    onSave={(results) => saveScore(round, results)}
-                    saveLabel={t("play.updateRound")}
-                  />
-                  <Button variant="ghost" className="mt-2 w-full" onClick={() => setEditingIndex(null)}>
-                    {t("common.cancel")}
-                  </Button>
-                </div>
-              ) : (
-                // Newest first, so a round that has just been scored lifts in at the top of the list.
-                <Card key={round.index} className="rise-in p-4">
-                  <div className="mb-1.5 flex items-center justify-between">
-                    <span className="eyebrow text-muted">
-                      {t("play.round", { number: round.index + 1 })}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setEditingIndex(round.index)}
-                      className="eyebrow text-muted hover:text-ink"
-                    >
-                      {t("common.edit")}
-                    </button>
-                  </div>
-                  {round.matches.map((match) => (
-                    <MatchSummary
-                      key={match.court}
-                      match={match}
-                      result={round.results.find((r) => r.court === match.court)}
-                      nameOf={playerName}
-                      courts={session.courts}
-                    />
-                  ))}
-                  {round.sittingOut.length > 0 ? (
-                    <p className="mt-2 text-xs text-muted">
-                      {t("play.benchList", { names: round.sittingOut.map(playerName).join(", ") })}
-                    </p>
-                  ) : null}
-                </Card>
-              ),
-            )}
-          </div>
+          <PlayedRounds
+            rounds={played}
+            courts={session.courts}
+            nameOf={playerName}
+            onSave={saveScore}
+          />
         </section>
       ) : null}
 

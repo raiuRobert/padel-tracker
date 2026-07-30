@@ -27,6 +27,7 @@ const en = {
   "common.nobody": "Nobody yet",
   "common.language": "Language",
   "common.confirm": "Confirm",
+  "common.done": "Done",
 
   "confirm.removePlayerTitle": "Remove player?",
   "confirm.deleteGroupTitle": "Delete group?",
@@ -210,13 +211,17 @@ const en = {
   "play.reopenSession": "Reopen session",
   "play.reopenHint": "Puts another round on the board so you can carry on playing.",
   "play.finishedTitle": "Session finished",
-  "play.finishedBody": "{rounds}. The standings and cost split are final.",
+  "play.finishedBody": "{rounds}. Standings and costs are settled — correct a result below if one went in wrong.",
   "play.winnerLabel": "{team} won",
 
   "standings.after": "After {rounds}",
   "standings.points": "points",
   "standings.noScoresTitle": "No results yet",
   "standings.noScoresBody": "Play a round and tap the winner — the leaderboard fills in from there.",
+  "standings.fixPrompt": "Result wrong? Correct it",
+  "standings.fixTitle": "Correct a result",
+  "standings.fixHint":
+    "Pick the team that actually won and save. The table above follows, and so does the cost split.",
   // Wins and losses are shown as a ✓/✕ chip rather than a letter, so they read the same in every
   // language. These labels exist for screen readers and tooltips.
   "standings.allTimeTitle": "All-time",
@@ -289,6 +294,7 @@ const ro: Record<MessageKey, string> = {
   "common.nobody": "Nimeni deocamdată",
   "common.language": "Limbă",
   "common.confirm": "Confirmă",
+  "common.done": "Gata",
 
   "confirm.removePlayerTitle": "Elimini jucătorul?",
   "confirm.deleteGroupTitle": "Ștergi grupul?",
@@ -470,13 +476,18 @@ const ro: Record<MessageKey, string> = {
   "play.reopenSession": "Redeschide sesiunea",
   "play.reopenHint": "Adaugă o rundă nouă ca să continuați jocul.",
   "play.finishedTitle": "Sesiune încheiată",
-  "play.finishedBody": "{rounds}. Clasamentul și împărțirea costurilor sunt finale.",
+  "play.finishedBody":
+    "{rounds}. Clasamentul și costurile sunt stabilite — corectează mai jos un rezultat, dacă a intrat greșit.",
   "play.winnerLabel": "{team} a câștigat",
 
   "standings.after": "După {rounds}",
   "standings.points": "puncte",
   "standings.noScoresTitle": "Niciun rezultat încă",
   "standings.noScoresBody": "Jucați o rundă și apăsați câștigătorul — clasamentul se completează singur.",
+  "standings.fixPrompt": "Rezultat greșit? Corectează-l",
+  "standings.fixTitle": "Corectează un rezultat",
+  "standings.fixHint":
+    "Alege echipa care a câștigat de fapt și salvează. Clasamentul de deasupra se ia după el, la fel și împărțirea costurilor.",
   "standings.allTimeTitle": "Clasament general",
   "standings.allTimeSubtitle": "Toate jocurile câștigate, adunate.",
   "standings.everyone": "Toți",

@@ -119,6 +119,34 @@ describe("standings", () => {
     expect(table[3]).toMatchObject({ points: 0, losses: 2, roundsPlayed: 2 });
   });
 
+  it("moves the points to the other team when a result is corrected", () => {
+    // What happens when the group settles an argument about a round after it was scored: the
+    // corrected round is the only input the table has, so the table simply follows it.
+    const rounds = [
+      round(0, ["ana", "ben"], ["cleo", "dan"], "A"),
+      round(1, ["ana", "cleo"], ["ben", "dan"], "A"),
+    ];
+    const before = sessionStandings(session({ rounds }));
+    const corrected = [rounds[0], round(1, ["ana", "cleo"], ["ben", "dan"], "B")];
+    const after = sessionStandings(session({ rounds: corrected }));
+
+    expect(before.find((r) => r.playerId === "ana")).toMatchObject({ points: 2, losses: 0 });
+    expect(after.find((r) => r.playerId === "ana")).toMatchObject({ points: 1, losses: 1 });
+    expect(after.find((r) => r.playerId === "dan")).toMatchObject({ points: 1, losses: 1 });
+  });
+
+  it("leaves who is billed for what alone when a result is corrected", () => {
+    // Correcting a winner must not move anybody's court share: they played the rotation either way,
+    // and a bill that shifted because of an argument about who won would be indefensible.
+    const rounds = [round(0, ["ana", "ben"], ["cleo", "dan"], "A")];
+    const before = sessionCostSplit(session({ rounds }));
+    const after = sessionCostSplit(session({ rounds: [round(0, ["ana", "ben"], ["cleo", "dan"], "B")] }));
+
+    expect(after.perPlayer.map((p) => p.courtShareCents)).toEqual(
+      before.perPlayer.map((p) => p.courtShareCents),
+    );
+  });
+
   it("ranks a player with fewer losses above one on the same points", () => {
     const table = computeStandings(["ana", "ben"], [
       {
