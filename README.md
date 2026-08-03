@@ -59,11 +59,13 @@ add to each player's points. The shape depends on how many people showed up:
   and each round uses 2 of them, so a full cycle is exactly 5 rounds: every partnership happens
   once and everyone sits out once. Only a single seat rotates per round — the player coming off the
   sideline swaps in for one specific player, rather than a whole pair stepping out.
-- **6 players, 1 court** — sit-outs happen in fixed *pairs*. The six are split into three fixed
-  partnerships; each round two of them play and the third sits. A full cycle is 3 rounds, after
-  which every pair has sat once and played every other pair once. Then the six are reshuffled into
-  three brand-new partnerships and the cycle runs again. Points accumulate per player across
-  reshuffles.
+- **6 players, 1 court** — two sit out per round, and a full cycle is **9 rounds**. Six people have
+  15 possible partnerships and a round uses two of them, so 8 rounds is the arithmetic floor — but
+  8 rounds means 16 sit-out slots between 6 players, which can't come out level. The ninth round
+  buys a schedule where everything lands evenly: all 15 partnerships happen (3 of them twice),
+  everyone sits out exactly 3 times and never twice running, everyone plays against everyone, and
+  nobody keeps the same partner two rounds in a row. It's a fixed table rather than a formula,
+  picked by searching all 45 possible fixtures for the arrangement that satisfies the lot.
 - **8 players, 2 courts** — you choose four opening pairs at setup (just tap the players in pair
   order). Play runs in **blocks of three rounds**: within a block each court runs a full 4-player
   cycle, so everyone partners everyone they share a court with. Between blocks, **two players swap
@@ -206,6 +208,10 @@ Decisions made without asking, noted here so they're easy to revisit:
 - **8-player pairs are chosen by tap order** at setup, and the four blocks always run in full — an
   8-player session plans at least the 12 rounds it takes for everyone to have partnered everyone,
   rounded up to whole blocks, rather than stopping mid-block.
+- **The schedule on the board is always at least one whole rotation**, even when the booking is
+  shorter than that. Planning purely by the clock would put a schedule up that never gets everyone
+  playing with everyone — 6 players over two hours works out at 8 rounds, one short of the 9 it
+  takes. Sessions run until someone ends them anyway, so the estimate was never a limit.
 - **Session length is a free number input**, defaulting to 2 hours — not a fixed 2/3/4 dropdown.
 - **A game has no score, only a winner.** Tapping the winning team gives each of its players a
   point; there's no games-to-win setting.

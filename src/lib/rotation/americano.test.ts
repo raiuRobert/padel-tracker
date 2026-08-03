@@ -6,7 +6,6 @@ import {
   EIGHT_PLAYER_BLOCK_ROUNDS,
   generateAmericanoSchedule,
   isCourtSwapRound,
-  SIX_PLAYER_PARTNERSHIP_CYCLE_ROUNDS,
 } from "./americano";
 import { partnershipKey } from "./types";
 import type { Round } from "./types";
@@ -101,64 +100,79 @@ describe("Americano — 6 players, 1 court", () => {
   const players = roster(6);
   const cycle = americanoCycleLength(6);
 
-  /** The three fixed partnerships in play during the cycle starting at `cycleIndex`. */
-  const pairSetOf = (rounds: readonly Round[], cycleIndex: number): string[] =>
-    [...new Set(allPartnershipKeys(rounds.slice(cycleIndex * 3, cycleIndex * 3 + 3)))].sort();
+  /**
+   * The 9-round schedule is a hand-picked table rather than a formula, so these check the
+   * properties it was chosen for. They're the reason the table is 9 rounds and not the 8 the
+   * partnership arithmetic alone would allow.
+   */
 
-  it("has a cycle of exactly 3 rounds", () => {
-    expect(cycle).toBe(3);
+  it("has a cycle of exactly 9 rounds", () => {
+    expect(cycle).toBe(9);
   });
 
-  it("sits out a whole pair each round, never a lone player", () => {
-    const rounds = schedule(6, 1, 15);
+  it("sits out two players each round", () => {
+    const rounds = schedule(6, 1, cycle * 2);
     expectWellFormedRounds(rounds, players, 1);
     for (const round of rounds) expect(round.sittingOut).toHaveLength(2);
   });
 
-  it("uses only the three fixed partnerships within a cycle", () => {
-    const rounds = schedule(6, 1, cycle);
-    expect(pairSetOf(rounds, 0)).toHaveLength(3);
+  it("covers all 15 partnerships within a single cycle", () => {
+    const played = allPartnershipKeys(schedule(6, 1, cycle));
+    expect([...new Set(played)].sort()).toEqual(everyPartnershipKey(players));
   });
 
-  it("sits each pair out exactly once per cycle", () => {
-    const rounds = schedule(6, 1, cycle);
-    const benched = rounds.map((round) => partnershipKey([round.sittingOut[0], round.sittingOut[1]]));
-    expect(new Set(benched).size).toBe(3);
-    expect([...benched].sort()).toEqual(pairSetOf(rounds, 0));
+  it("repeats only the 3 partnerships it has to", () => {
+    // 9 rounds offer 18 partnership slots for 15 pairs, so exactly 3 pairs come up twice — and no
+    // pair should come up three times while another is still waiting for its second.
+    const counts = new Map<string, number>();
+    for (const key of allPartnershipKeys(schedule(6, 1, cycle))) {
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    expect([...counts.values()].filter((n) => n === 2)).toHaveLength(3);
+    expect(Math.max(...counts.values())).toBe(2);
   });
 
-  it("has every pair play every other pair exactly once per cycle", () => {
-    const rounds = schedule(6, 1, cycle);
-    const matchups = rounds.map((round) =>
-      [partnershipKey(round.matches[0].teamA), partnershipKey(round.matches[0].teamB)].sort().join(" vs "),
-    );
-    expect(new Set(matchups).size).toBe(3);
+  it("sits everyone out exactly three times per cycle", () => {
+    const counts = sitOutCounts(schedule(6, 1, cycle), players);
+    expect([...counts.values()]).toEqual([3, 3, 3, 3, 3, 3]);
   });
 
-  it("reshuffles into a genuinely new set of partnerships after each cycle", () => {
-    const rounds = schedule(6, 1, SIX_PLAYER_PARTNERSHIP_CYCLE_ROUNDS);
-    const first = pairSetOf(rounds, 0);
-    const second = pairSetOf(rounds, 1);
-    expect(second).toHaveLength(3);
-    expect(second.filter((key) => first.includes(key))).toEqual([]);
+  it("never sits the same player out two rounds running", () => {
+    // Checked over two cycles, so the join between the last round and the first is covered too.
+    const rounds = schedule(6, 1, cycle * 2);
+    for (let i = 1; i < rounds.length; i++) {
+      const previous = new Set(rounds[i - 1].sittingOut);
+      const twiceRunning = rounds[i].sittingOut.filter((id) => previous.has(id));
+      expect(twiceRunning, `round ${i} repeats a sit-out from round ${i - 1}`).toEqual([]);
+    }
   });
 
-  it("covers all 15 partnerships across 5 cycles without a single repeat", () => {
-    const rounds = schedule(6, 1, SIX_PLAYER_PARTNERSHIP_CYCLE_ROUNDS);
-    const sets = [0, 1, 2, 3, 4].map((i) => pairSetOf(rounds, i));
-    const combined = sets.flat();
-    expect(combined).toHaveLength(15);
-    expect(new Set(combined).size).toBe(15);
-    expect([...combined].sort()).toEqual(everyPartnershipKey(players));
+  it("never keeps a partnership together two rounds running", () => {
+    const rounds = schedule(6, 1, cycle * 2);
+    for (let i = 1; i < rounds.length; i++) {
+      const previous = new Set(partnershipKeys(rounds[i - 1]));
+      const held = partnershipKeys(rounds[i]).filter((key) => previous.has(key));
+      expect(held, `round ${i} keeps a partnership from round ${i - 1}`).toEqual([]);
+    }
   });
 
-  it("returns to the opening pair set once all partnerships are exhausted", () => {
-    const rounds = schedule(6, 1, SIX_PLAYER_PARTNERSHIP_CYCLE_ROUNDS + 3);
-    expect(pairSetOf(rounds, 5)).toEqual(pairSetOf(rounds, 0));
+  it("has everyone play against everyone within a cycle", () => {
+    const faced = new Set<string>();
+    for (const round of schedule(6, 1, cycle)) {
+      const { teamA, teamB } = round.matches[0];
+      for (const a of teamA) for (const b of teamB) faced.add(partnershipKey([a, b]));
+    }
+    expect([...faced].sort()).toEqual(everyPartnershipKey(players));
+  });
+
+  it("repeats the same schedule once the cycle runs out", () => {
+    const rounds = schedule(6, 1, cycle + 2);
+    expect(partnershipKeys(rounds[cycle])).toEqual(partnershipKeys(rounds[0]));
+    expect(rounds[cycle].sittingOut).toEqual(rounds[0].sittingOut);
   });
 
   it("never repeats a sit-out before everyone has sat", () => {
-    expectFairSitOuts(schedule(6, 1, 15), players);
+    expectFairSitOuts(schedule(6, 1, cycle * 2), players);
   });
 });
 

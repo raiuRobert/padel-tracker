@@ -33,29 +33,38 @@ const FOUR_PLAYER_ROUNDS: readonly (readonly [readonly [number, number], readonl
 ];
 
 /**
- * With 6 players locked into 3 fixed partnerships, a cycle is the 3 ways to pick which pair sits.
- * Every pair sits exactly once and meets every other pair exactly once.
+ * 6 players, 1 court, in 9 rounds.
+ *
+ * Six people have 15 possible partnerships and a round uses 2, so the arithmetic alone puts the
+ * floor at 8 rounds. Eight is reachable but leaves 16 sit-out slots to share between 6 players,
+ * which can't come out level — some sit twice, some three times. Nine rounds spends 3 slots on
+ * repeated partnerships to buy an evening where nobody can count anything unfair:
+ *
+ * - all 15 partnerships happen, 3 of them twice
+ * - everyone sits out exactly 3 times, never twice running, spaced through the session
+ * - everyone plays against everyone, 2 or 3 times each
+ * - nobody keeps the same partner two rounds in a row
+ *
+ * Found by searching the 45 distinct fixtures (which pair sits × the 3 ways to split the other
+ * four) for the 9-round arrangement that best satisfies all of the above at once. Written out
+ * rather than generated because the properties above are what matter, and a table can be checked
+ * against them directly — which is what the tests do.
  */
-const SIX_PLAYER_MATCHUPS: readonly { readonly play: readonly [number, number]; readonly sit: number }[] = [
-  { play: [0, 1], sit: 2 },
-  { play: [0, 2], sit: 1 },
-  { play: [1, 2], sit: 0 },
+const SIX_PLAYER_ROUNDS: readonly {
+  readonly teamA: readonly [number, number];
+  readonly teamB: readonly [number, number];
+  readonly sit: readonly [number, number];
+}[] = [
+  { teamA: [0, 3], teamB: [2, 5], sit: [1, 4] },
+  { teamA: [1, 5], teamB: [2, 4], sit: [0, 3] },
+  { teamA: [0, 4], teamB: [1, 3], sit: [2, 5] },
+  { teamA: [0, 5], teamB: [2, 3], sit: [1, 4] },
+  { teamA: [1, 4], teamB: [2, 5], sit: [0, 3] },
+  { teamA: [0, 1], teamB: [3, 4], sit: [2, 5] },
+  { teamA: [0, 2], teamB: [4, 5], sit: [1, 3] },
+  { teamA: [0, 3], teamB: [1, 2], sit: [4, 5] },
+  { teamA: [1, 4], teamB: [3, 5], sit: [0, 2] },
 ];
-
-/**
- * A 1-factorization of K6 by the circle method: player 5 stays put while 0..4 rotate. The five
- * resulting pair sets are pairwise disjoint and together cover all 15 possible partnerships, so
- * five consecutive reshuffles never repeat a partnership.
- */
-const SIX_PLAYER_PAIR_SETS: readonly (readonly (readonly [number, number])[])[] = Array.from(
-  { length: 5 },
-  (_, i) =>
-    [
-      [5, i],
-      [(i + 1) % 5, (i + 4) % 5],
-      [(i + 2) % 5, (i + 3) % 5],
-    ] as const,
-);
 
 /**
  * 8 players across 2 courts run in blocks of 3 rounds. A block is one complete 4-player cycle on
@@ -99,23 +108,24 @@ export function isCourtSwapRound(playerCount: number, index: number): boolean {
   return playerCount === 8 && index > 0 && index % EIGHT_PLAYER_BLOCK_ROUNDS === 0;
 }
 
-/** Rounds until the whole pattern repeats. */
+/**
+ * Rounds until the whole pattern repeats — and, for every supported size, the point by which
+ * everyone has partnered everyone at least once.
+ */
 export function americanoCycleLength(playerCount: number): number {
   switch (playerCount) {
     case 4:
-    case 6:
       return 3;
     case 5:
       return 5;
+    case 6:
+      return SIX_PLAYER_ROUNDS.length;
     case 8:
       return EIGHT_PLAYER_BLOCK_ROUNDS * EIGHT_PLAYER_BLOCK_COUNT;
     default:
       throw new RotationConfigError(`No Americano cycle defined for ${playerCount} players.`);
   }
 }
-
-/** Rounds until 6-player partnerships themselves repeat: 5 disjoint pair sets × 3 rounds each. */
-export const SIX_PLAYER_PARTNERSHIP_CYCLE_ROUNDS = SIX_PLAYER_PAIR_SETS.length * 3;
 
 function team(players: readonly PlayerId[], [a, b]: readonly [number, number]): Team {
   return [players[a], players[b]];
@@ -150,20 +160,13 @@ function fivePlayerRound(players: readonly PlayerId[], index: number): Round {
   };
 }
 
-/**
- * 6 players, 1 court: three fixed partnerships, two of which play while the third sits. After a
- * full 3-round cycle the six are reshuffled into a genuinely new set of partnerships.
- */
+/** 6 players, 1 court: the 9-round schedule above, repeating once it runs out. */
 function sixPlayerRound(players: readonly PlayerId[], index: number): Round {
-  const cycle = Math.floor(index / 3);
-  const pairSet = SIX_PLAYER_PAIR_SETS[cycle % SIX_PLAYER_PAIR_SETS.length];
-  const pairs = pairSet.map((pair) => team(players, pair));
-
-  const { play, sit } = SIX_PLAYER_MATCHUPS[index % 3];
+  const { teamA, teamB, sit } = SIX_PLAYER_ROUNDS[index % SIX_PLAYER_ROUNDS.length];
   return {
     index,
-    matches: [{ court: 1, teamA: pairs[play[0]], teamB: pairs[play[1]] }],
-    sittingOut: [...pairs[sit]],
+    matches: [{ court: 1, teamA: team(players, teamA), teamB: team(players, teamB) }],
+    sittingOut: sit.map((i) => players[i]),
   };
 }
 

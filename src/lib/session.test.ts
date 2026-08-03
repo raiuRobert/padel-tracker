@@ -275,8 +275,16 @@ describe("planning rounds", () => {
     expect(plannedRoundCount(8, 3.5)).toBe(15);
   });
 
-  it("leaves smaller sessions on the plain hourly estimate", () => {
+  it("leaves smaller sessions on the plain hourly estimate when it already mixes everyone", () => {
     expect(plannedRoundCount(4, 2)).toBe(8);
     expect(plannedRoundCount(5, 3)).toBe(12);
+  });
+
+  it("plans a whole rotation for 6 players, however short the booking", () => {
+    // Six people need 9 rounds to get through all 15 partnerships. The clock says 8 for two hours
+    // and 4 for one, either of which would put a schedule on the board that never mixes everyone.
+    expect(plannedRoundCount(6, 2)).toBe(9);
+    expect(plannedRoundCount(6, 1)).toBe(9);
+    expect(plannedRoundCount(6, 3)).toBe(12);
   });
 });

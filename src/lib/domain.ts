@@ -1,5 +1,6 @@
 import type { CourtBooking, CourtSplit, Extra } from "./cost/types";
 import type { CurrencyCode } from "./currency";
+import { americanoCycleLength } from "./rotation/americano";
 import type { Match, PlayerId, RotationMode } from "./rotation/types";
 import type { MatchResult } from "./standings";
 
@@ -104,6 +105,10 @@ export function suggestedRoundCount(hours: number): number {
 /**
  * How many rounds to put on the board when a session starts.
  *
+ * Always at least one full rotation cycle, so the schedule people are looking at is the one where
+ * everybody partners everybody. Planning purely by the clock cuts that short — six players need 9
+ * rounds to get through all 15 partnerships, and a two-hour session works out at 8.
+ *
  * 8 players run in blocks of three with a court swap between blocks, so stopping part-way through a
  * block would leave the mixing half-done. Those sessions always plan whole blocks, and at least the
  * four blocks it takes for everyone to have partnered everyone.
@@ -111,5 +116,5 @@ export function suggestedRoundCount(hours: number): number {
 export function plannedRoundCount(playerCount: number, hours: number): number {
   const suggested = suggestedRoundCount(hours);
   if (playerCount === 8) return Math.max(12, Math.ceil(suggested / 3) * 3);
-  return suggested;
+  return Math.max(americanoCycleLength(playerCount), suggested);
 }
